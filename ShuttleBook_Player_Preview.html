@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+  <title>ShuttleBook — Player preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --wa-bg: #0b141a;
+      --incoming: #1f2c34;
+      --outgoing: #005c4b;
+      --accent: #00a884;
+      --ticks: #53bdeb;
+      --muted: #8696a0;
+      --bar: #202c33;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      background: #0a0f14;
+      color: #e9edef;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+    }
+    .shell {
+      width: 100%;
+      max-width: 420px;
+      min-height: 100vh;
+      background: var(--wa-bg);
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 0 40px rgba(0,0,0,0.5);
+    }
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.55rem 0.65rem;
+      background: var(--bar);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .back {
+      color: var(--muted);
+      font-size: 1.25rem;
+      line-height: 1;
+      padding: 0.25rem;
+    }
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #00a884, #006b5c);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+    }
+    .head-text h1 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #e9edef;
+    }
+    .head-text p {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 0.1rem;
+    }
+    .chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.65rem 0.5rem 5.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .day-pill {
+      align-self: center;
+      background: #182229;
+      color: var(--muted);
+      font-size: 0.68rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      margin: 0.35rem 0;
+    }
+    .sys-msg {
+      align-self: center;
+      max-width: 90%;
+      text-align: center;
+      font-size: 0.68rem;
+      color: var(--muted);
+      line-height: 1.35;
+      padding: 0.35rem 0.5rem;
+    }
+    .row {
+      display: flex;
+      width: 100%;
+    }
+    .row.in { justify-content: flex-start; }
+    .row.out { justify-content: flex-end; }
+    .bubble {
+      max-width: 88%;
+      padding: 0.45rem 0.55rem 0.5rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      line-height: 1.42;
+      position: relative;
+      word-wrap: break-word;
+    }
+    .bubble.in {
+      background: var(--incoming);
+      border-top-left-radius: 2px;
+    }
+    .bubble.in::before {
+      content: "";
+      position: absolute;
+      left: -6px;
+      top: 0;
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 0 6px 8px 0;
+      border-color: transparent var(--incoming) transparent transparent;
+    }
+    .bubble.out {
+      background: var(--outgoing);
+      border-top-right-radius: 2px;
+    }
+    .bubble.out::before {
+      content: "";
+      position: absolute;
+      right: -6px;
+      top: 0;
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 0 0 8px 6px;
+      border-color: transparent transparent transparent var(--outgoing);
+    }
+    .meta {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.25rem;
+      margin-top: 0.15rem;
+      font-size: 0.62rem;
+      color: rgba(233,237,240,0.55);
+    }
+    .ticks {
+      color: var(--ticks);
+      letter-spacing: -0.12em;
+      font-size: 0.75rem;
+    }
+    .typing-wrap {
+      display: flex;
+      justify-content: flex-start;
+      padding: 0.25rem 0 0.35rem;
+    }
+    .typing {
+      background: var(--incoming);
+      border-radius: 999px;
+      padding: 0.55rem 0.85rem;
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .typing span {
+      width: 7px;
+      height: 7px;
+      background: var(--muted);
+      border-radius: 50%;
+      animation: bounce 1.2s ease-in-out infinite;
+    }
+    .typing span:nth-child(2) { animation-delay: 0.15s; }
+    .typing span:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+      30% { transform: translateY(-5px); opacity: 1; }
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin: 0.5rem 0 0.15rem;
+      padding: 0 0.15rem;
+    }
+    .actions.full { width: 100%; }
+    .btn-chip {
+      flex: 1;
+      min-width: calc(50% - 0.3rem);
+      border: none;
+      border-radius: 999px;
+      padding: 0.55rem 0.65rem;
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: #182229;
+      color: var(--accent);
+      border: 1px solid rgba(0,168,132,0.35);
+    }
+    .btn-chip:active { opacity: 0.9; }
+    .btn-chip:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-chip.danger {
+      color: #ff6b6b;
+      border-color: rgba(255,107,107,0.35);
+    }
+    .stripe {
+      margin-top: 0.45rem;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #1a1f2e;
+      border: 1px solid rgba(255,255,255,0.08);
+      max-width: 100%;
+    }
+    .stripe-head {
+      background: linear-gradient(135deg, #635bff 0%, #7a73ff 40%, #a855f7 100%);
+      padding: 0.75rem 0.85rem;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .stripe-body {
+      padding: 0.65rem 0.85rem 0.85rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .stripe-pay {
+      width: 100%;
+      margin-top: 0.65rem;
+      padding: 0.6rem;
+      border: none;
+      border-radius: 6px;
+      background: #635bff;
+      color: #fff;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .stripe-pay:disabled { opacity: 0.7; cursor: wait; }
+    .list-block {
+      margin-top: 0.35rem;
+      font-size: 0.8rem;
+      line-height: 1.55;
+      color: #d1d7db;
+    }
+    .list-block li { margin-left: 1.1rem; margin-bottom: 0.15rem; }
+    .highlight { color: #f0c93a; font-weight: 600; }
+    .bottom {
+      position: sticky;
+      bottom: 0;
+      background: var(--bar);
+      padding: 0.45rem 0.5rem calc(0.45rem + env(safe-area-inset-bottom));
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .bottom input {
+      flex: 1;
+      background: #2a3942;
+      border: none;
+      border-radius: 999px;
+      padding: 0.55rem 0.85rem;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.85rem;
+    }
+    .send {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: none;
+      background: #005c4b;
+      color: var(--muted);
+      font-size: 1.1rem;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    .confetti-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 100;
+    }
+    .confetti-layer span {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      top: -12px;
+      will-change: transform;
+      animation: fall linear forwards;
+    }
+    @keyframes fall {
+      to {
+        transform: translateY(110vh) rotate(720deg);
+        opacity: 0.85;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="header">
+      <span class="back" aria-hidden="true">&#8592;</span>
+      <div class="avatar" aria-hidden="true">&#127992;</div>
+      <div class="head-text">
+        <h1>ShuttleBook</h1>
+        <p>online</p>
+      </div>
+    </header>
+    <div class="chat" id="chat"></div>
+    <footer class="bottom">
+      <input type="text" placeholder="Message" disabled aria-disabled="true" />
+      <button type="button" class="send" disabled aria-label="Send" title="Visual only">&#9654;</button>
+    </footer>
+  </div>
+  <div class="confetti-layer" id="confetti" aria-hidden="true"></div>
+
+  <script>
+(function () {
+  const chat = document.getElementById("chat");
+  const confettiEl = document.getElementById("confetti");
+
+  const NAMES_11 = [
+    "Alex Chen", "Priya Sharma", "Marcus Williams", "Sarah Johnson", "David Kim",
+    "Lisa Patel", "Tom Wright", "Emma Davis", "James Miller", "Rachel Brown", "You"
+  ];
+
+  let queue = [];
+  let processing = false;
+
+  function scrollEnd() {
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function addRow(html, cls) {
+    const wrap = document.createElement("div");
+    wrap.className = "row " + cls;
+    wrap.innerHTML = html;
+    chat.appendChild(wrap);
+    scrollEnd();
+  }
+
+  function systemMessage(text) {
+    const d = document.createElement("div");
+    d.className = "sys-msg";
+    d.textContent = text;
+    chat.appendChild(d);
+    scrollEnd();
+  }
+
+  function incoming(html) {
+    addRow('<div class="bubble in">' + html + "</div>", "in");
+  }
+
+  function outgoing(html, withTicks) {
+    const tick = withTicks
+      ? '<div class="meta"><span>12:04</span> <span class="ticks" aria-hidden="true">&#10003;&#10003;</span></div>'
+      : "";
+    addRow('<div class="bubble out">' + html + tick + "</div>", "out");
+  }
+
+  function showTyping(ms, done) {
+    const w = document.createElement("div");
+    w.className = "typing-wrap";
+    w.innerHTML = '<div class="typing" role="status"><span></span><span></span><span></span></div>';
+    chat.appendChild(w);
+    scrollEnd();
+    setTimeout(function () {
+      w.remove();
+      done();
+    }, ms);
+  }
+
+  function clearActions() {
+    chat.querySelectorAll(".actions").forEach(function (a) {
+      a.querySelectorAll(".btn-chip").forEach(function (b) {
+        b.disabled = true;
+      });
+    });
+  }
+
+  function actionButtons(id, items) {
+    const div = document.createElement("div");
+    div.className = "actions full";
+    div.id = id;
+    items.forEach(function (it) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "btn-chip" + (it.danger ? " danger" : "");
+      b.textContent = it.label;
+      b.addEventListener("click", function () {
+        it.onClick();
+      });
+      div.appendChild(b);
+    });
+    chat.appendChild(div);
+    scrollEnd();
+  }
+
+  function fireConfetti() {
+    const colors = ["#f85149", "#58a6ff", "#3fb950", "#f0c93a", "#a371f7", "#ff9bce", "#00a884", "#d29922"];
+    for (let i = 0; i < 40; i++) {
+      const s = document.createElement("span");
+      s.style.left = Math.random() * 100 + "%";
+      s.style.background = colors[Math.floor(Math.random() * colors.length)];
+      s.style.animationDuration = 2.5 + Math.random() * 2 + "s";
+      s.style.animationDelay = Math.random() * 0.3 + "s";
+      confettiEl.appendChild(s);
+    }
+    setTimeout(function () {
+      confettiEl.innerHTML = "";
+    }, 4000);
+  }
+
+  function processQueue() {
+    if (processing || queue.length === 0) return;
+    processing = true;
+    const job = queue.shift();
+    processStep(job);
+  }
+
+  function enqueue(fn) {
+    queue.push(fn);
+    processQueue();
+  }
+
+  function processStep(job) {
+    job(function () {
+      processing = false;
+      processQueue();
+    });
+  }
+
+  /* --- Flow --- */
+  function startAnnouncement() {
+    const day = document.createElement("div");
+    day.className = "day-pill";
+    day.textContent = "Today";
+    chat.appendChild(day);
+
+    systemMessage(
+      "ShuttleBook uses end-to-end encryption. Messages are private between you and ShuttleBook."
+    );
+
+    incoming(
+      "&#127992; <strong>Saturday 5 April 2026</strong><br/>" +
+        "Northside Sports Hall<br/>" +
+        "7:00 AM – 10:00 AM<br/><br/>" +
+        "Spots left: <strong>6 / 16</strong><br/>" +
+        "Session fee: <strong>$15</strong><br/>" +
+        "Booking closes: <strong>Thursday 8:00 PM</strong>"
+    );
+
+    actionButtons("step1-actions", [
+      {
+        label: "BOOK a spot",
+        onClick: function () {
+          clearActions();
+          pathBook();
+        }
+      },
+      {
+        label: "Who's coming?",
+        onClick: function () {
+          clearActions();
+          pathWhosComingEarly();
+        }
+      }
+    ]);
+  }
+
+  function pathWhosComingEarly() {
+    incoming("Here's who's in so far (demo roster):");
+    const ul = document.createElement("div");
+    ul.className = "bubble in";
+    let h = "<div class='list-block'><ol>";
+    for (let i = 0; i < 10; i++) {
+      h += "<li>" + NAMES_11[i] + " &#10003;</li>";
+    }
+    h += "</ol>6 spots still open — tap BOOK to grab one.</div>";
+    ul.innerHTML = h;
+    const rowIn = document.createElement("div");
+    rowIn.className = "row in";
+    rowIn.appendChild(ul);
+    chat.appendChild(rowIn);
+    scrollEnd();
+    actionButtons("early-wl", [
+      {
+        label: "BOOK a spot",
+        onClick: function () {
+          clearActions();
+          pathBook();
+        }
+      },
+      {
+        label: "Restart demo",
+        onClick: function () {
+          restart();
+        }
+      }
+    ]);
+  }
+
+  function pathBook() {
+    enqueue(function (next) {
+      outgoing("BOOK", true);
+      showTyping(1200, function () {
+        incoming("Great choice! Complete the $15 payment below.");
+        const stripe = document.createElement("div");
+        stripe.className = "row in";
+        stripe.innerHTML =
+          '<div style="max-width:88%">' +
+          '<div class="stripe">' +
+          '<div class="stripe-head">$15.00</div>' +
+          '<div class="stripe-body">ShuttleBook session deposit<br/>Saturday 5 April 2026' +
+          '<button type="button" class="stripe-pay" id="payBtn">Pay $15.00</button></div></div></div>';
+        chat.appendChild(stripe);
+        scrollEnd();
+        const payBtn = document.getElementById("payBtn");
+        payBtn.addEventListener("click", function onPay() {
+          payBtn.disabled = true;
+          payBtn.textContent = "Processing...";
+          setTimeout(function () {
+            payBtn.textContent = "Paid \u2713";
+            payBtn.style.background = "#238636";
+            setTimeout(function () {
+              enqueue(function (next2) {
+                showTyping(1500, function () {
+                  incoming(
+                    "You\u2019re confirmed for <strong>Saturday 5 April 2026</strong>.<br/>" +
+                      "Northside Sports Hall, 7:00 AM \u2013 10:00 AM.<br/>" +
+                      "<strong>$15 paid \u2713</strong><br/>" +
+                      "Court: <strong>Court 2</strong> (auto-assigned)<br/><br/>" +
+                      "Reminder: withdraw before deadline if plans change ($2 cancellation fee)."
+                  );
+                  fireConfetti();
+                  systemMessage("11 players confirmed. 5 spots remaining.");
+                  actionButtons("post-pay", [
+                    {
+                      label: "Got it, see you Saturday!",
+                      onClick: function () {
+                        clearActions();
+                        pathGotIt();
+                      }
+                    },
+                    {
+                      label: "Who's coming?",
+                      onClick: function () {
+                        clearActions();
+                        pathWhosComingFull();
+                      }
+                    },
+                    {
+                      label: "WITHDRAW",
+                      danger: true,
+                      onClick: function () {
+                        clearActions();
+                        pathWithdraw();
+                      }
+                    }
+                  ]);
+                  next2();
+                });
+              });
+            }, 400);
+          }, 900);
+        }, { once: true });
+        next();
+      });
+    });
+  }
+
+  function pathGotIt() {
+    incoming("See you on the court Saturday! You\u2019ll get a reminder Friday evening.");
+    actionButtons("restart1", [
+      {
+        label: "Restart demo",
+        onClick: function () {
+          restart();
+        }
+      }
+    ]);
+  }
+
+  function pathWhosComingFull() {
+    incoming("Confirmed players:");
+    const ul = document.createElement("div");
+    ul.className = "bubble in";
+    let h = "<div class='list-block'><ol>";
+    NAMES_11.forEach(function (n, i) {
+      const mark = n === "You" ? '<span class="highlight">#11 You \u2B50</span>' : n + " \u2713";
+      h += "<li>" + mark + "</li>";
+    });
+    h += "</ol>Courts: <strong>2 active</strong> (7\u201311 players). Spots left: <strong>5 / 16</strong>.</div>";
+    ul.innerHTML = h;
+    const row = document.createElement("div");
+    row.className = "row in";
+    row.appendChild(ul);
+    chat.appendChild(row);
+    scrollEnd();
+    actionButtons("after-wl", [
+      {
+        label: "Restart demo",
+        onClick: function () {
+          restart();
+        }
+      }
+    ]);
+  }
+
+  function pathWithdraw() {
+    outgoing("WITHDRAW", true);
+    incoming(
+      "<strong>$2</strong> cancellation fee applies. <strong>$13</strong> refund to your card. Are you sure?"
+    );
+    actionButtons("wd", [
+      {
+        label: "Yes, withdraw me",
+        danger: true,
+        onClick: function () {
+          clearActions();
+          incoming(
+            "Booking cancelled. <strong>$13</strong> refunded. Next waitlisted player has been notified."
+          );
+          endRestart();
+        }
+      },
+      {
+        label: "No, keep my spot",
+        onClick: function () {
+          clearActions();
+          incoming("Great, your spot is safe! See you Saturday.");
+          endRestart();
+        }
+      }
+    ]);
+  }
+
+  function endRestart() {
+    actionButtons("end-r", [
+      {
+        label: "Restart demo",
+        onClick: function () {
+          restart();
+        }
+      }
+    ]);
+  }
+
+  function restart() {
+    chat.innerHTML = "";
+    queue = [];
+    processing = false;
+    startAnnouncement();
+  }
+
+  startAnnouncement();
+})();
+  </script>
+</body>
+</html>

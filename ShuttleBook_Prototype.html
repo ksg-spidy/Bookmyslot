@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ShuttleBook — Admin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card: #161b22;
+      --border: #30363d;
+      --green: #3fb950;
+      --yellow: #f0c93a;
+      --red: #f85149;
+      --blue: #58a6ff;
+      --orange: #d29922;
+      --grey: #8b949e;
+      --wa: #25d366;
+      --text: #e6edf3;
+      --muted: #8b949e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "DM Sans", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-weight: 400;
+    }
+    h1, h2, h3, .stat-num, .countdown-unit span:first-child {
+      font-family: "Rajdhani", sans-serif;
+      font-weight: 700;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 1.25rem;
+      padding: 1.25rem;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.1rem;
+      margin-bottom: 1rem;
+    }
+    .card-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+    /* Session Status */
+    .session-card {
+      background: linear-gradient(145deg, #0c2218 0%, #1a472a 100%);
+      border: 1px solid #238636;
+      position: relative;
+    }
+    .session-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .pill-slot {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: rgba(63, 185, 80, 0.2);
+      border: 1px solid var(--green);
+      color: var(--green);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      padding: 0.35rem 0.65rem;
+      border-radius: 999px;
+      font-family: "Rajdhani", sans-serif;
+    }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse-dot 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.5); }
+      50% { opacity: 0.85; transform: scale(1.1); box-shadow: 0 0 12px 2px rgba(63, 185, 80, 0.35); }
+    }
+    .session-date {
+      font-family: "Rajdhani", sans-serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #fff;
+      margin-top: 0.25rem;
+    }
+    .session-meta {
+      font-size: 0.85rem;
+      color: #c9d1d9;
+      margin-top: 0.2rem;
+    }
+    .open-slot-btn {
+      background: transparent;
+      border: 1px solid var(--blue);
+      color: var(--blue);
+      font-size: 0.72rem;
+      padding: 0.35rem 0.6rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .open-slot-btn:hover { background: rgba(88, 166, 255, 0.12); }
+    .stat-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      margin-top: 0.85rem;
+    }
+    .stat-box {
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 0.55rem 0.65rem;
+    }
+    .stat-box label {
+      font-size: 0.65rem;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .stat-box .val {
+      font-family: "Rajdhani", sans-serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #fff;
+      margin-top: 0.15rem;
+    }
+    .countdown-wrap {
+      margin-top: 1rem;
+      padding-top: 0.85rem;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    .countdown-label {
+      font-size: 0.7rem;
+      color: #8b949e;
+      margin-bottom: 0.5rem;
+    }
+    .countdown-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .countdown-unit {
+      background: rgba(0,0,0,0.35);
+      border-radius: 8px;
+      padding: 0.4rem 0.55rem;
+      min-width: 52px;
+      text-align: center;
+    }
+    .countdown-unit span:first-child {
+      display: block;
+      font-size: 1.25rem;
+      color: var(--yellow);
+      line-height: 1.2;
+    }
+    .countdown-unit span:last-child {
+      font-size: 0.6rem;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .countdown-closed {
+      color: var(--red);
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    /* Progress */
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      margin-bottom: 0.4rem;
+    }
+    .progress-track {
+      height: 12px;
+      background: #21262d;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #238636, var(--green));
+      border-radius: 999px;
+      transition: width 0.45s ease;
+      width: 0%;
+    }
+    .spot-sub {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .spot-sub strong { color: var(--green); }
+    /* Courts */
+    .court-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+    }
+    .court-tile {
+      aspect-ratio: 0.55;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Rajdhani", sans-serif;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+    .court-tile.active {
+      background: linear-gradient(160deg, #0d3d26 0%, #1a472a 100%);
+      border: 1px solid #238636;
+    }
+    .court-tile.active::before {
+      content: "";
+      position: absolute;
+      inset: 12%;
+      border: 1px solid rgba(255,255,255,0.15);
+      pointer-events: none;
+    }
+    .court-tile.active::after {
+      content: "";
+      position: absolute;
+      left: 12%;
+      right: 12%;
+      top: 50%;
+      height: 1px;
+      background: rgba(255,255,255,0.12);
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+    .court-tile.active .court-net {
+      position: absolute;
+      left: 50%;
+      top: 12%;
+      bottom: 12%;
+      width: 1px;
+      background: rgba(255,255,255,0.12);
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+    .court-tile.inactive {
+      border: 2px dashed var(--border);
+      background: #0d1117;
+      color: var(--muted);
+    }
+    .court-tile .court-label { position: relative; z-index: 1; }
+    .court-tile .court-net { z-index: 0; }
+    .court-hint {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.65rem;
+      line-height: 1.4;
+    }
+    /* Admin buttons */
+    .admin-btns { display: flex; flex-direction: column; gap: 0.5rem; }
+    .btn {
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.65rem 0.85rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.99); }
+    .btn-wa { background: var(--wa); color: #fff; }
+    .btn-wa:hover { filter: brightness(1.08); }
+    .btn-sim { background: var(--blue); color: #fff; }
+    .btn-csv { background: #21262d; color: var(--text); border: 1px solid var(--border); }
+    .btn-danger { background: rgba(248, 81, 73, 0.15); color: var(--red); border: 1px solid var(--red); }
+    .btn-danger:hover { background: rgba(248, 81, 73, 0.25); }
+    /* Stats row */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    @media (max-width: 700px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+    }
+    .mini-stat {
+      border-radius: 10px;
+      padding: 0.85rem;
+      border: 1px solid var(--border);
+    }
+    .mini-stat.green { border-left: 3px solid var(--green); }
+    .mini-stat.orange { border-left: 3px solid var(--orange); }
+    .mini-stat.grey { border-left: 3px solid var(--grey); }
+    .mini-stat.yellow { border-left: 3px solid var(--yellow); }
+    .mini-stat .lbl { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .mini-stat .num {
+      font-family: "Rajdhani", sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-top: 0.2rem;
+    }
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 0.35rem;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .tab {
+      padding: 0.4rem 0.75rem;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .tab.active {
+      background: #21262d;
+      border-color: var(--border);
+      color: var(--text);
+    }
+    .tab:hover { color: var(--text); }
+    /* Table */
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    th {
+      text-align: left;
+      padding: 0.6rem 0.5rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      font-weight: 500;
+    }
+    td { padding: 0.55rem 0.5rem; border-bottom: 1px solid #21262d; vertical-align: middle; }
+    .player-cell { display: flex; align-items: center; gap: 0.55rem; }
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.45rem;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .badge-confirmed { background: rgba(63, 185, 80, 0.15); color: var(--green); }
+    .badge-waitlist { background: rgba(210, 153, 34, 0.15); color: var(--orange); }
+    .badge-withdrawn { background: rgba(139, 148, 158, 0.15); color: var(--grey); }
+    .btn-sm {
+      font-size: 0.72rem;
+      padding: 0.35rem 0.55rem;
+      border-radius: 6px;
+      border: 1px solid var(--orange);
+      background: transparent;
+      color: var(--orange);
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-sm:hover { background: rgba(210, 153, 34, 0.12); }
+    .btn-sm:disabled { opacity: 0.4; cursor: not-allowed; }
+    .waitlist-section {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+    .waitlist-section h4 {
+      font-size: 0.8rem;
+      color: var(--orange);
+      margin-bottom: 0.5rem;
+      font-family: "Rajdhani", sans-serif;
+    }
+    .waitlist-queue { font-size: 0.85rem; color: var(--muted); }
+    .waitlist-queue li { margin-left: 1.2rem; margin-bottom: 0.25rem; }
+    /* Modals */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(1, 4, 9, 0.72);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      max-width: 480px;
+      width: 100%;
+      max-height: 90vh;
+      overflow: auto;
+      padding: 1.25rem;
+      position: relative;
+    }
+    .modal.wide { max-width: 520px; }
+    .modal h3 {
+      font-family: "Rajdhani", sans-serif;
+      font-size: 1.25rem;
+      margin-bottom: 0.75rem;
+    }
+    .modal-close {
+      position: absolute;
+      top: 0.85rem;
+      right: 0.85rem;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 1.25rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .form-row { margin-bottom: 0.65rem; }
+    .form-row label { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 0.25rem; }
+    .form-row input, .form-row select {
+      width: 100%;
+      padding: 0.45rem 0.5rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #0d1117;
+      color: var(--text);
+      font-family: inherit;
+    }
+    .wa-bubble {
+      background: #005c4b;
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      margin: 0.5rem 0;
+      max-width: 100%;
+    }
+    .sim-step {
+      background: #21262d;
+      border-radius: 8px;
+      padding: 0.75rem;
+      margin-bottom: 0.65rem;
+      font-size: 0.85rem;
+      min-height: 3rem;
+    }
+    .sim-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+    .btn-primary {
+      background: var(--green);
+      color: #0d1117;
+      border: none;
+      padding: 0.5rem 0.85rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-secondary {
+      background: #21262d;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 0.5rem 0.85rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 1.25rem;
+      right: 1.25rem;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .toast {
+      background: #21262d;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      animation: toast-in 0.35s ease;
+      max-width: 320px;
+    }
+    @keyframes toast-in {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside>
+      <div class="card session-card">
+        <div class="session-head">
+          <div>
+            <div class="pill-slot"><span class="pulse-dot"></span> SLOT OPEN</div>
+            <div class="session-date" id="sessionDateDisplay">Saturday, 5 April 2026</div>
+            <div class="session-meta" id="sessionMeta">7:00 AM – 10:00 AM · Northside Sports Hall</div>
+          </div>
+          <button type="button" class="open-slot-btn" id="btnOpenSlot">Open new slot</button>
+        </div>
+        <div class="stat-grid-2">
+          <div class="stat-box"><label>Booking fee</label><div class="val" id="dispFee">$15</div></div>
+          <div class="stat-box"><label>Max players</label><div class="val" id="dispMax">16</div></div>
+          <div class="stat-box"><label>Withdrawal fee</label><div class="val" id="dispWithFee">$2</div></div>
+          <div class="stat-box"><label>Deadline</label><div class="val" style="font-size:0.85rem">Thu 8 PM</div></div>
+        </div>
+        <div class="countdown-wrap">
+          <div class="countdown-label">Closes in (to Thu 8 PM before session)</div>
+          <div class="countdown-row" id="countdownRow"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Spot availability</div>
+        <div class="progress-label"><span>Confirmed</span><span id="progLabel">0 / 16</span></div>
+        <div class="progress-track"><div class="progress-fill" id="progFill"></div></div>
+        <div class="spot-sub"><span><strong id="spotsLeft">0</strong> spots remaining</span><span><span id="wlCount">0</span> on waitlist</span></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Court allocation</div>
+        <div class="court-grid" id="courtGrid"></div>
+        <p class="court-hint" id="courtHint"></p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Admin controls</div>
+        <div class="admin-btns">
+          <button type="button" class="btn btn-wa" id="btnWa">Send WhatsApp Reminder</button>
+          <button type="button" class="btn btn-sim" id="btnSimFlow">Simulate Player Booking Flow</button>
+          <button type="button" class="btn btn-csv" id="btnCsv">Export Booking Report (CSV)</button>
+          <button type="button" class="btn btn-danger" id="btnLock">Close Slot &amp; Lock Bookings</button>
+        </div>
+      </div>
+    </aside>
+
+    <main>
+      <div class="stats-row">
+        <div class="mini-stat green"><div class="lbl">Confirmed</div><div class="num" id="stConfirmed">0</div></div>
+        <div class="mini-stat orange"><div class="lbl">Waitlisted</div><div class="num" id="stWait">0</div></div>
+        <div class="mini-stat grey"><div class="lbl">Withdrawn</div><div class="num" id="stWith">0</div></div>
+        <div class="mini-stat yellow"><div class="lbl">Revenue net</div><div class="num" id="stRev">$0</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Booking register</div>
+        <div class="tabs" id="filterTabs">
+          <button type="button" class="tab active" data-filter="all">All</button>
+          <button type="button" class="tab" data-filter="confirmed">Confirmed</button>
+          <button type="button" class="tab" data-filter="waitlist">Waitlist</button>
+          <button type="button" class="tab" data-filter="withdrawn">Withdrawn</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Player</th>
+                <th>Status</th>
+                <th>Payment</th>
+                <th>Booked time</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="regBody"></tbody>
+          </table>
+        </div>
+        <div class="waitlist-section" id="waitlistSection" style="display:none">
+          <h4>Waitlist queue</h4>
+          <ol class="waitlist-queue" id="waitlistOl"></ol>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modals -->
+  <div class="modal-overlay" id="modalSlot" role="dialog" aria-modal="true">
+    <div class="modal wide">
+      <button type="button" class="modal-close" data-close="modalSlot">&times;</button>
+      <h3>Open new slot</h3>
+      <form id="formSlot">
+        <div class="form-row"><label>Session date</label><input type="date" name="date" required /></div>
+        <div class="form-row"><label>Start time</label><input type="time" name="start" value="07:00" /></div>
+        <div class="form-row"><label>End time</label><input type="time" name="end" value="10:00" /></div>
+        <div class="form-row"><label>Venue</label><input type="text" name="venue" value="Northside Sports Hall" /></div>
+        <div class="form-row"><label>Max players</label>
+          <select name="maxp">
+            <option>13</option><option>14</option><option>15</option><option selected>16</option>
+          </select>
+        </div>
+        <div class="form-row"><label>Max courts</label>
+          <select name="maxc"><option>3</option><option selected>4</option></select>
+        </div>
+        <div class="form-row"><label>Booking fee ($)</label><input type="number" name="bookfee" value="15" min="1" /></div>
+        <div class="form-row"><label>Withdrawal fee ($)</label><input type="number" name="withfee" value="2" min="0" /></div>
+        <div class="form-row"><label>Deadline (local)</label><input type="datetime-local" name="deadline" /></div>
+        <div class="sim-actions">
+          <button type="submit" class="btn-primary">Save slot</button>
+          <button type="button" class="btn-secondary" data-close="modalSlot">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalWa" role="dialog" aria-modal="true">
+    <div class="modal">
+      <button type="button" class="modal-close" data-close="modalWa">&times;</button>
+      <h3>WhatsApp reminder preview</h3>
+      <p style="font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem">Recipients: <strong id="waRecipientCount">0</strong> players (DM)</p>
+      <div class="wa-bubble" id="waBubbleText"></div>
+      <button type="button" class="btn-secondary" data-close="modalWa">Close</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalSim" role="dialog" aria-modal="true">
+    <div class="modal wide">
+      <button type="button" class="modal-close" data-close="modalSim">&times;</button>
+      <h3>Booking simulation</h3>
+      <p style="font-size:0.75rem;color:var(--muted);margin-bottom:0.5rem">Step <span id="simStepNum">1</span> / 7</p>
+      <div class="sim-step" id="simStepBody"></div>
+      <div class="sim-actions">
+        <button type="button" class="btn-primary" id="simNext">Next step</button>
+        <button type="button" class="btn-secondary" data-close="modalSim">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalWithdraw" role="dialog" aria-modal="true">
+    <div class="modal">
+      <button type="button" class="modal-close" data-close="modalWithdraw">&times;</button>
+      <h3>Confirm withdrawal</h3>
+      <p style="margin-bottom:0.75rem"><strong id="wdName"></strong></p>
+      <p style="font-size:0.85rem;line-height:1.5;color:var(--muted)">
+        Paid <strong style="color:var(--text)">$15</strong> − cancellation fee <strong style="color:var(--yellow)">$2</strong> = refund <strong style="color:var(--green)">$13</strong>
+      </p>
+      <div class="sim-actions" style="margin-top:1rem">
+        <button type="button" class="btn-primary" id="wdConfirm">Confirm withdrawal</button>
+        <button type="button" class="btn-secondary" data-close="modalWithdraw">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toasts"></div>
+
+  <script>
+(function () {
+  const SESSION = {
+    dateLabel: "Saturday, 5 April 2026",
+    meta: "7:00 AM – 10:00 AM · Northside Sports Hall",
+    maxPlayers: 16,
+    bookFee: 15,
+    withFee: 2,
+    deadline: null
+  };
+
+  function sessionSaturday() {
+    return new Date(2026, 3, 5, 9, 0, 0);
+  }
+
+  function deadlineThursday8pm() {
+    const sat = sessionSaturday();
+    const d = new Date(sat);
+    const day = d.getDay();
+    const diff = (day + 7 - 4) % 7;
+    d.setDate(d.getDate() - diff - 2);
+    d.setHours(20, 0, 0, 0);
+    return d;
+  }
+  SESSION.deadline = deadlineThursday8pm();
+
+  const PALETTE = ["#f85149", "#58a6ff", "#3fb950", "#d29922", "#a371f7", "#f0883e", "#79c0ff"];
+  function hashColor(name) {
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+    return PALETTE[Math.abs(h) % PALETTE.length];
+  }
+  function initials(name) {
+    const p = name.trim().split(/\s+/);
+    return ((p[0] && p[0][0]) || "") + ((p[1] && p[1][0]) || "");
+  }
+
+  let players = [
+    { id: 1, name: "Alex Chen", phone: "0400-100-001", status: "confirmed", payment: "Paid $15", booked: "Mon 24 Mar, 9:12 AM" },
+    { id: 2, name: "Priya Sharma", phone: "0400-100-002", status: "confirmed", payment: "Paid $15", booked: "Mon 24 Mar, 10:03 AM" },
+    { id: 3, name: "Marcus Williams", phone: "0400-100-003", status: "confirmed", payment: "Paid $15", booked: "Tue 25 Mar, 7:45 AM" },
+    { id: 4, name: "Sarah Johnson", phone: "0400-100-004", status: "confirmed", payment: "Paid $15", booked: "Tue 25 Mar, 2:20 PM" },
+    { id: 5, name: "David Kim", phone: "0400-100-005", status: "confirmed", payment: "Paid $15", booked: "Wed 26 Mar, 8:01 AM" },
+    { id: 6, name: "Lisa Patel", phone: "0400-100-006", status: "confirmed", payment: "Paid $15", booked: "Wed 26 Mar, 6:15 PM" },
+    { id: 7, name: "Tom Wright", phone: "0400-100-007", status: "confirmed", payment: "Paid $15", booked: "Thu 27 Mar, 11:30 AM" },
+    { id: 8, name: "Emma Davis", phone: "0400-100-008", status: "confirmed", payment: "Paid $15", booked: "Thu 27 Mar, 4:50 PM" },
+    { id: 9, name: "James Miller", phone: "0400-100-009", status: "confirmed", payment: "Paid $15", booked: "Fri 28 Mar, 9:00 AM" },
+    { id: 10, name: "Rachel Brown", phone: "0400-100-010", status: "confirmed", payment: "Paid $15", booked: "Fri 28 Mar, 1:22 PM" },
+    { id: 11, name: "Kevin Liu", phone: "0400-100-011", status: "confirmed", payment: "Paid $15", booked: "Sat 29 Mar, 8:05 AM" },
+    { id: 12, name: "Natalie Foster", phone: "0400-100-012", status: "confirmed", payment: "Paid $15", booked: "Sat 29 Mar, 3:40 PM" },
+    { id: 13, name: "Sam Rodriguez", phone: "0400-100-013", status: "withdrawn", payment: "$13 refunded - $2 kept", booked: "Sun 23 Mar, 5:00 PM" },
+    { id: 14, name: "Mei Zhang", phone: "0400-100-014", status: "withdrawn", payment: "$13 refunded - $2 kept", booked: "Mon 24 Mar, 4:12 PM" },
+    { id: 15, name: "Chris Anderson", phone: "0400-100-015", status: "waitlist", payment: "—", booked: "Sun 30 Mar, 10:11 AM" },
+    { id: 16, name: "Amy Thompson", phone: "0400-100-016", status: "waitlist", payment: "—", booked: "Sun 30 Mar, 10:18 AM" },
+    { id: 17, name: "Daniel Lee", phone: "0400-100-017", status: "waitlist", payment: "—", booked: "Mon 31 Mar, 7:55 AM" }
+  ];
+
+  let filter = "all";
+  let withdrawTargetId = null;
+
+  function calcCourts(n) {
+    if (n <= 0) return 0;
+    if (n <= 6) return 1;
+    if (n <= 11) return 2;
+    if (n === 12) return 3;
+    return 4;
+  }
+
+  function counts() {
+    const c = players.filter((p) => p.status === "confirmed").length;
+    const w = players.filter((p) => p.status === "waitlist").length;
+    const x = players.filter((p) => p.status === "withdrawn").length;
+    return { confirmed: c, waitlist: w, withdrawn: x };
+  }
+
+  function revenue() {
+    const { confirmed, withdrawn } = counts();
+    return confirmed * SESSION.bookFee + withdrawn * SESSION.withFee;
+  }
+
+  function sortWaitlist() {
+    return players
+      .filter((p) => p.status === "waitlist")
+      .sort((a, b) => a.id - b.id);
+  }
+
+  function renderCourts() {
+    const n = counts().confirmed;
+    const active = calcCourts(n);
+    const grid = document.getElementById("courtGrid");
+    grid.innerHTML = "";
+    for (let i = 1; i <= 4; i++) {
+      const el = document.createElement("div");
+      el.className = "court-tile " + (i <= active ? "active" : "inactive");
+      el.innerHTML =
+        (i <= active ? '<span class="court-net"></span>' : "") +
+        '<span class="court-label">Court ' +
+        i +
+        "</span>";
+      grid.appendChild(el);
+    }
+    let hint = "";
+    if (active === 0) hint = "Courts activate from 1 player up (display); games need 4+ players.";
+    else if (active < 2) hint = "Court 2 unlocks at 7+ players.";
+    else if (active < 3) hint = "Court 3 unlocks at 12 players.";
+    else if (active < 4) hint = "Court 4 unlocks at 13+ players.";
+    else hint = "All four courts are active for 13+ players.";
+    document.getElementById("courtHint").textContent = hint;
+  }
+
+  function renderProgress() {
+    const { confirmed, waitlist } = counts();
+    const max = SESSION.maxPlayers;
+    const pct = Math.min(100, (confirmed / max) * 100);
+    document.getElementById("progFill").style.width = pct + "%";
+    document.getElementById("progLabel").textContent = confirmed + " / " + max;
+    document.getElementById("spotsLeft").textContent = Math.max(0, max - confirmed);
+    document.getElementById("wlCount").textContent = waitlist;
+  }
+
+  function renderStats() {
+    const { confirmed, waitlist, withdrawn } = counts();
+    document.getElementById("stConfirmed").textContent = confirmed;
+    document.getElementById("stWait").textContent = waitlist;
+    document.getElementById("stWith").textContent = withdrawn;
+    document.getElementById("stRev").textContent = "$" + revenue();
+  }
+
+  function renderTable() {
+    const body = document.getElementById("regBody");
+    body.innerHTML = "";
+    let list = players.slice();
+    if (filter === "confirmed") list = list.filter((p) => p.status === "confirmed");
+    else if (filter === "waitlist") list = list.filter((p) => p.status === "waitlist");
+    else if (filter === "withdrawn") list = list.filter((p) => p.status === "withdrawn");
+    list.forEach((p, idx) => {
+      const tr = document.createElement("tr");
+      const stClass =
+        p.status === "confirmed" ? "badge-confirmed" : p.status === "waitlist" ? "badge-waitlist" : "badge-withdrawn";
+      const badge = p.status.charAt(0).toUpperCase() + p.status.slice(1);
+      const action =
+        p.status === "confirmed"
+          ? '<button type="button" class="btn-sm" data-wid="' + p.id + '">Withdraw</button>'
+          : "—";
+      tr.innerHTML =
+        "<td>" +
+        (idx + 1) +
+        '</td><td><div class="player-cell"><div class="avatar" style="background:' +
+        hashColor(p.name) +
+        '">' +
+        initials(p.name) +
+        "</div><div><div>" +
+        p.name +
+        '</div><div style="font-size:0.72rem;color:var(--muted)">' +
+        p.phone +
+        "</div></div></div></td><td><span class=\"badge " +
+        stClass +
+        '">' +
+        badge +
+        "</span></td><td>" +
+        p.payment +
+        "</td><td>" +
+        p.booked +
+        "</td><td>" +
+        action +
+        "</td>";
+      body.appendChild(tr);
+    });
+    body.querySelectorAll("[data-wid]").forEach((btn) => {
+      btn.addEventListener("click", function () {
+        withdrawTargetId = parseInt(btn.getAttribute("data-wid"), 10);
+        const pl = players.find((x) => x.id === withdrawTargetId);
+        if (pl) {
+          document.getElementById("wdName").textContent = pl.name;
+          openModal("modalWithdraw");
+        }
+      });
+    });
+  }
+
+  function renderWaitlistSection() {
+    const wl = sortWaitlist();
+    const sec = document.getElementById("waitlistSection");
+    const ol = document.getElementById("waitlistOl");
+    if (wl.length === 0) {
+      sec.style.display = "none";
+      return;
+    }
+    sec.style.display = "block";
+    ol.innerHTML = "";
+    wl.forEach((p, i) => {
+      const li = document.createElement("li");
+      li.textContent = "#" + (i + 1) + " — " + p.name + " (" + p.phone + ")";
+      ol.appendChild(li);
+    });
+  }
+
+  function renderAll() {
+    renderProgress();
+    renderCourts();
+    renderStats();
+    renderTable();
+    renderWaitlistSection();
+  }
+
+  function countdownTick() {
+    const row = document.getElementById("countdownRow");
+    const dl = SESSION.deadline;
+    const now = new Date();
+    let diff = dl - now;
+    if (diff <= 0) {
+      row.innerHTML = '<span class="countdown-closed">Booking closed</span>';
+      return;
+    }
+    const s = Math.floor(diff / 1000) % 60;
+    const m = Math.floor(diff / 1000 / 60) % 60;
+    const h = Math.floor(diff / 1000 / 60 / 60) % 24;
+    const d = Math.floor(diff / 1000 / 60 / 60 / 24);
+    function unit(val, lab) {
+      return (
+        '<div class="countdown-unit"><span>' +
+        val +
+        '</span><span>' +
+        lab +
+        "</span></div>"
+      );
+    }
+    row.innerHTML = unit(d, "days") + unit(h, "hrs") + unit(m, "min") + unit(s, "sec");
+  }
+
+  function toast(msg) {
+    const c = document.getElementById("toasts");
+    const el = document.createElement("div");
+    el.className = "toast";
+    el.textContent = msg;
+    c.appendChild(el);
+    setTimeout(function () {
+      el.remove();
+    }, 3800);
+  }
+
+  function openModal(id) {
+    document.getElementById(id).classList.add("open");
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove("open");
+  }
+
+  document.querySelectorAll("[data-close]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      closeModal(btn.getAttribute("data-close"));
+    });
+  });
+  document.querySelectorAll(".modal-overlay").forEach(function (ov) {
+    ov.addEventListener("click", function (e) {
+      if (e.target === ov) ov.classList.remove("open");
+    });
+  });
+
+  document.getElementById("btnOpenSlot").addEventListener("click", function () {
+    const f = document.getElementById("formSlot");
+    const dl = SESSION.deadline;
+    const pad = (n) => (n < 10 ? "0" + n : "" + n);
+    f.deadline.value =
+      dl.getFullYear() +
+      "-" +
+      pad(dl.getMonth() + 1) +
+      "-" +
+      pad(dl.getDate()) +
+      "T" +
+      pad(dl.getHours()) +
+      ":" +
+      pad(dl.getMinutes());
+    openModal("modalSlot");
+  });
+
+  document.getElementById("formSlot").addEventListener("submit", function (e) {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const v = fd.get("venue");
+    SESSION.meta = fd.get("start") + " – " + fd.get("end") + " · " + v;
+    SESSION.maxPlayers = parseInt(fd.get("maxp"), 10);
+    SESSION.bookFee = parseInt(fd.get("bookfee"), 10);
+    SESSION.withFee = parseInt(fd.get("withfee"), 10);
+    const dt = new Date(fd.get("deadline"));
+    if (!isNaN(dt.getTime())) SESSION.deadline = dt;
+    document.getElementById("sessionMeta").textContent = SESSION.meta;
+    document.getElementById("dispMax").textContent = SESSION.maxPlayers;
+    document.getElementById("dispFee").textContent = "$" + SESSION.bookFee;
+    document.getElementById("dispWithFee").textContent = "$" + SESSION.withFee;
+    closeModal("modalSlot");
+    toast("Session slot updated.");
+    renderAll();
+    countdownTick();
+  });
+
+  document.getElementById("btnWa").addEventListener("click", function () {
+    const { confirmed, waitlist } = counts();
+    const n = confirmed + waitlist;
+    document.getElementById("waRecipientCount").textContent = n;
+    document.getElementById("waBubbleText").textContent =
+      "ShuttleBook: Reminder — Badminton this " +
+      SESSION.dateLabel +
+      " at " +
+      SESSION.meta.split("·").pop().trim() +
+      ". You're in! Check the sheet for court allocation. See you Saturday.";
+    openModal("modalWa");
+  });
+
+  const simSteps = [
+    "Player sends: BOOK",
+    "Bot: Here's your secure payment link for $" + SESSION.bookFee + " — tap Pay to confirm your spot.",
+    "Player completes card payment successfully.",
+    "Bot: You're confirmed for " + SESSION.dateLabel + "! " + SESSION.meta + " — $" + SESSION.bookFee + " paid. Court assignment will follow. See you Saturday!",
+    "Player sends: WITHDRAW",
+    "Bot: Cancellation fee is $2. You'll receive $" + (SESSION.bookFee - SESSION.withFee) + " back. Reply YES to confirm withdrawal.",
+    "Bot: Withdrawal confirmed. $" + (SESSION.bookFee - SESSION.withFee) + " refund processing. Next waitlisted player has been notified."
+  ];
+  let simIndex = 0;
+  document.getElementById("btnSimFlow").addEventListener("click", function () {
+    simIndex = 0;
+    document.getElementById("simStepNum").textContent = "1";
+    document.getElementById("simStepBody").textContent = simSteps[0];
+    document.getElementById("simNext").style.display = "inline-block";
+    openModal("modalSim");
+  });
+  document.getElementById("simNext").addEventListener("click", function () {
+    simIndex++;
+    if (simIndex >= simSteps.length) {
+      closeModal("modalSim");
+      toast("Simulation complete.");
+      return;
+    }
+    document.getElementById("simStepNum").textContent = String(simIndex + 1);
+    document.getElementById("simStepBody").textContent = simSteps[simIndex];
+  });
+
+  document.getElementById("wdConfirm").addEventListener("click", function () {
+    if (!withdrawTargetId) return;
+    const idx = players.findIndex((p) => p.id === withdrawTargetId);
+    if (idx === -1) return;
+    players[idx].status = "withdrawn";
+    players[idx].payment = "$13 refunded - $2 kept";
+    const next = sortWaitlist()[0];
+    if (next) {
+      const ni = players.findIndex((p) => p.id === next.id);
+      players[ni].status = "confirmed";
+      players[ni].payment = "Paid $" + SESSION.bookFee;
+      toast(next.name + " promoted from waitlist to confirmed.");
+    } else {
+      toast("Player withdrawn. No waitlist to promote.");
+    }
+    withdrawTargetId = null;
+    closeModal("modalWithdraw");
+    renderAll();
+  });
+
+  document.getElementById("btnCsv").addEventListener("click", function () {
+    const rows = [["Name", "Phone", "Status", "Payment", "Booked"]];
+    players.forEach((p) => {
+      rows.push([p.name, p.phone, p.status, p.payment, p.booked]);
+    });
+    const csv = rows.map((r) => r.map((c) => '"' + String(c).replace(/"/g, '""') + '"').join(",")).join("\n");
+    const a = document.createElement("a");
+    a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+    a.download = "shuttlebook-report.csv";
+    a.click();
+    toast("CSV downloaded.");
+  });
+
+  document.getElementById("btnLock").addEventListener("click", function () {
+    if (confirm("Close this slot and lock all bookings? This cannot be undone in the prototype.")) {
+      toast("Bookings locked for this session.");
+    }
+  });
+
+  document.getElementById("filterTabs").addEventListener("click", function (e) {
+    const t = e.target.closest(".tab");
+    if (!t) return;
+    filter = t.getAttribute("data-filter");
+    document.querySelectorAll("#filterTabs .tab").forEach((x) => x.classList.remove("active"));
+    t.classList.add("active");
+    renderTable();
+  });
+
+  setInterval(countdownTick, 1000);
+  countdownTick();
+  renderAll();
+})();
+  </script>
+</body>
+</html>
