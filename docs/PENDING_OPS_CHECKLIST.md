@@ -118,7 +118,7 @@ In Supabase **SQL Editor**, run each file from `web/supabase/migrations/` **once
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same |
 | `SUPABASE_SERVICE_ROLE_KEY` | Same (**server only** — never expose to browser) |
 | `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` for local dev |
-| `STRIPE_SECRET_KEY` | Stripe → Developers → API keys (`sk_test_...`) |
+| `STRIPE_SECRET_KEY` | Stripe → Developers → API keys (Secret key) |
 | `STRIPE_WEBHOOK_SECRET` | Phase 4 (local CLI) or Phase 6 (production endpoint) |
 | `STRIPE_CURRENCY` | Optional, default `aud` |
 | `BOOKING_TZ_OFFSET` | Optional, e.g. `+10:00` (AEST) |

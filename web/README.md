@@ -40,7 +40,7 @@ Copy `.env.local.example` to `.env.local` and fill in:
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same |
 | `SUPABASE_SERVICE_ROLE_KEY` | Same (**server only** — never expose to the browser) |
 | `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` or production origin, no trailing slash |
-| `STRIPE_SECRET_KEY` | Stripe **Developers → API keys** (`sk_test_...`) |
+| `STRIPE_SECRET_KEY` | Stripe **Developers → API keys** (Secret key) |
 | `STRIPE_WEBHOOK_SECRET` | From Stripe webhook endpoint (below) |
 | `STRIPE_CURRENCY` | Optional, default `aud` |
 | `BOOKING_TZ_OFFSET` | Optional — offset for admin session times, e.g. `+10:00` (AEST) or `+11:00` (AEDT) |
