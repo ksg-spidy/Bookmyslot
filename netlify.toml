@@ -1,0 +1,12 @@
+# Repo-root config — use when Netlify UI "Base directory" is empty (repo root).
+# If UI base is set to `web`, Netlify reads web/netlify.toml instead (same build settings).
+[build]
+  base = "web"
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
