@@ -5,6 +5,8 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  # Next.js server bundles reference env vars at build time — omit build cache/output from scan
+  SECRETS_SCAN_OMIT_PATHS = ".netlify/**,.next/**"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
