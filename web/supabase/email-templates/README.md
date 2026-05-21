@@ -20,7 +20,12 @@ In **Authentication** → **Providers** → **Email**, confirm **OTP expiry** ma
 |----------|---------|
 | `{{ .Email }}` | Who requested sign-in |
 | `{{ .ConfirmationURL }}` | One-time sign-in button and fallback URL |
-| `{{ .RedirectTo }}` | Optional note when sign-in was started from a deep link |
+| `{{ .RedirectTo }}` | Confirm page URL from `signInWithOtp` (must be allow-listed); CTA appends `token_hash` + `type` |
+| `{{ .TokenHash }}` | Server-side verification via `/auth/callback` (avoids PKCE / prefetch issues) |
+
+### Why `/auth/confirm`?
+
+Email providers often **prefetch** magic links, which consumes the one-time token (`otp_expired`). The template links to `/auth/confirm` first; the user clicks **Complete sign-in** to run verification. Ensure **Redirect URLs** include `/auth/confirm` and `/auth/callback` for your production host.
 
 ## Local Supabase CLI (optional)
 

@@ -1,10 +1,11 @@
 "use client";
 
+import { authLinkErrorMessage, parseAuthHashFragment } from "@/lib/authLinkErrors";
 import { createClient } from "@/lib/supabase/client";
 import { formatLoginDestination } from "@/lib/formatLoginDestination";
 import { safeInternalPath } from "@/lib/safeNextPath";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 
 const RESEND_COOLDOWN_SEC = 60;
 const LINK_EXPIRY_LABEL = "1 hour";
@@ -19,6 +20,28 @@ function LoginInner() {
   const [message, setMessage] = useState("");
   const [resendIn, setResendIn] = useState(0);
 
+  const [hashError, setHashError] = useState<{
+    errorCode: string | null;
+    errorDescription: string | null;
+  }>({ errorCode: null, errorDescription: null });
+
+  useEffect(() => {
+    setHashError(parseAuthHashFragment(window.location.hash));
+  }, []);
+
+  const authError = useMemo(() => {
+    if (hashError.errorCode) {
+      return authLinkErrorMessage(hashError.errorCode, hashError.errorDescription);
+    }
+    const queryCode = searchParams.get("error_code");
+    const queryDesc = searchParams.get("error_description");
+    if (queryCode) return authLinkErrorMessage(queryCode, queryDesc);
+    if (searchParams.get("error") === "auth") {
+      return authLinkErrorMessage("missing_token", null);
+    }
+    return null;
+  }, [searchParams, hashError]);
+
   useEffect(() => {
     if (resendIn <= 0) return;
     const timer = window.setInterval(() => {
@@ -32,11 +55,11 @@ function LoginInner() {
     setStatus("sending");
     setMessage("");
     const supabase = createClient();
-    const callback = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+    const confirmUrl = `${window.location.origin}/auth/confirm?next=${encodeURIComponent(nextPath)}`;
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: {
-        emailRedirectTo: callback,
+        emailRedirectTo: confirmUrl,
       },
     });
     if (error) {
@@ -59,6 +82,12 @@ function LoginInner() {
         Sign in with a one-time email link. No password.
       </p>
 
+      {authError ? (
+        <p className="mb-4 rounded-lg border border-red-900/50 bg-red-950/30 px-3 py-3 text-sm text-red-300" role="alert">
+          {authError}
+        </p>
+      ) : null}
+
       {phase === "sent" ? (
         <div className="flex flex-col gap-4">
           <div
@@ -80,7 +109,11 @@ function LoginInner() {
                 </p>
                 <ul className="mt-2 list-inside list-disc space-y-1 text-[#8b949e]">
                   <li>Open the email and click <strong className="text-[#e6edf3]">Sign in to ShuttleBook</strong>.</li>
-                  <li>Your browser opens ShuttleBook and signs you in automatically.</li>
+                  <li>
+                    On the next screen, click <strong className="text-[#e6edf3]">Complete sign-in</strong> (this
+                    stops email apps from using your link early).
+                  </li>
+                  <li>ShuttleBook signs you in automatically — no password.</li>
                   <li>
                     You will land on {destinationLabel}
                     {nextPath !== "/" ? (

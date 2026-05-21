@@ -97,11 +97,13 @@ In Supabase **SQL Editor**, run each file from `web/supabase/migrations/` **once
 2. **Site URL:**  
    - Dev: `http://localhost:3000`  
    - Prod: `https://your-site.netlify.app` (your real Netlify URL)
-3. **Redirect URLs** — add both:
+3. **Redirect URLs** — add (wildcard `https://your-site.netlify.app/**` is fine):
    - `http://localhost:3000/auth/callback`
+   - `http://localhost:3000/auth/confirm`
    - `https://your-site.netlify.app/auth/callback`
+   - `https://your-site.netlify.app/auth/confirm`
 
-**Done when:** Both origins are listed (adjust host if you use a custom domain).
+**Done when:** Callback and confirm paths are allowed (adjust host if you use a custom domain).
 
 ---
 

@@ -1,19 +1,62 @@
-import { createClient } from "@/lib/supabase/server";
-import { safeInternalPath } from "@/lib/safeNextPath";
-import { NextResponse } from "next/server";
+import { resolvePostLoginPath } from "@/lib/authCallback";
+import { createRouteHandlerClient } from "@/lib/supabase/routeHandler";
+import type { EmailOtpType } from "@supabase/supabase-js";
+import { NextResponse, type NextRequest } from "next/server";
 
-export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get("code");
-  const next = safeInternalPath(searchParams.get("next")) ?? "/";
+export const dynamic = "force-dynamic";
 
-  if (code) {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
-    }
+function loginRedirect(
+  request: NextRequest,
+  params: Record<string, string | undefined>
+) {
+  const { origin } = new URL(request.url);
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value) qs.set(key, value);
+  }
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  const response = NextResponse.redirect(`${origin}/login${suffix}`);
+  response.headers.set("Cache-Control", "private, no-store");
+  return response;
+}
+
+export async function GET(request: NextRequest) {
+  const url = new URL(request.url);
+  const code = url.searchParams.get("code");
+  const tokenHash = url.searchParams.get("token_hash");
+  const type = url.searchParams.get("type");
+  const next = resolvePostLoginPath(
+    url.searchParams.get("next"),
+    url.searchParams.get("redirect_to")
+  );
+
+  let response = NextResponse.redirect(`${url.origin}${next}`);
+  response.headers.set("Cache-Control", "private, no-store");
+
+  const supabase = createRouteHandlerClient(request, response);
+
+  if (tokenHash && type) {
+    const { error } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: type as EmailOtpType,
+    });
+    if (!error) return response;
+    return loginRedirect(request, {
+      error: "auth",
+      error_code: error.code ?? "verify_failed",
+      error_description: error.message,
+    });
   }
 
-  return NextResponse.redirect(`${origin}/login?error=auth`);
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) return response;
+    return loginRedirect(request, {
+      error: "auth",
+      error_code: error.code ?? "exchange_failed",
+      error_description: error.message,
+    });
+  }
+
+  return loginRedirect(request, { error: "auth", error_code: "missing_token" });
 }
