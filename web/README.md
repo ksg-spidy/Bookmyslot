@@ -30,6 +30,17 @@ Next.js app with **Supabase** (Postgres + magic-link auth) and **Stripe Checkout
   `http://localhost:3000/auth/callback`  
   `https://your-site.netlify.app/auth/callback`
 
+## 2b. Magic-link email template (recommended)
+
+Default Supabase magic-link emails are minimal. ShuttleBook includes branded templates that explain why the email was sent and what happens when the link is clicked.
+
+1. **Authentication → Email Templates → Magic Link**
+2. **Subject:** copy from `supabase/email-templates/magic-link-subject.txt`
+3. **Body:** paste HTML from `supabase/email-templates/magic-link.html`
+4. **Save**
+
+See `supabase/email-templates/README.md` for variables, OTP expiry alignment, and optional local `config.toml` setup.
+
 ## 3. Environment variables
 
 Copy `.env.local.example` to `.env.local` and fill in:

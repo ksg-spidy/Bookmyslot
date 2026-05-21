@@ -105,6 +105,20 @@ In Supabase **SQL Editor**, run each file from `web/supabase/migrations/` **once
 
 ---
 
+## Phase 2b — Magic-link email template (recommended)
+
+**Goal:** Sign-in emails name ShuttleBook, explain why the link was sent, and describe what happens on click.
+
+1. **Authentication → Email Templates → Magic Link**
+2. **Subject:** paste `web/supabase/email-templates/magic-link-subject.txt` (one line).
+3. **Body:** paste `web/supabase/email-templates/magic-link.html` (HTML source mode).
+4. **Save**
+5. Optional: **Authentication → Providers → Email** — confirm **OTP expiry** is `3600` (1 hour) or update the template and `/login` copy to match.
+
+**Done when:** A test magic link email shows the ShuttleBook subject, green CTA button, “what happens” bullets, and expiry/security text.
+
+---
+
 ## Phase 3 — Environment variables (local)
 
 **Goal:** `web/.env.local` has everything the server needs.
