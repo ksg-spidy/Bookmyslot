@@ -97,11 +97,27 @@ In Supabase **SQL Editor**, run each file from `web/supabase/migrations/` **once
 2. **Site URL:**  
    - Dev: `http://localhost:3000`  
    - Prod: `https://your-site.netlify.app` (your real Netlify URL)
-3. **Redirect URLs** — add both:
+3. **Redirect URLs** — add (wildcard `https://your-site.netlify.app/**` is fine):
    - `http://localhost:3000/auth/callback`
+   - `http://localhost:3000/auth/confirm`
    - `https://your-site.netlify.app/auth/callback`
+   - `https://your-site.netlify.app/auth/confirm`
 
-**Done when:** Both origins are listed (adjust host if you use a custom domain).
+**Done when:** Callback and confirm paths are allowed (adjust host if you use a custom domain).
+
+---
+
+## Phase 2b — Magic-link email template (recommended)
+
+**Goal:** Sign-in emails name ShuttleBook, explain why the link was sent, and describe what happens on click.
+
+1. **Authentication → Email Templates → Magic Link**
+2. **Subject:** paste `web/supabase/email-templates/magic-link-subject.txt` (one line).
+3. **Body:** paste `web/supabase/email-templates/magic-link.html` (HTML source mode).
+4. **Save**
+5. Optional: **Authentication → Providers → Email** — confirm **OTP expiry** is `3600` (1 hour) or update the template and `/login` copy to match.
+
+**Done when:** A test magic link email shows the ShuttleBook subject, green CTA button, “what happens” bullets, and expiry/security text.
 
 ---
 
