@@ -1,6 +1,6 @@
 import { resolvePostLoginPath } from "@/lib/authCallback";
 import { createRouteHandlerClient } from "@/lib/supabase/routeHandler";
-import type { EmailOtpType } from "@supabase/supabase-js";
+import { verifyMagicLinkOtp } from "@/lib/verifyMagicLinkOtp";
 import { NextResponse, type NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -36,10 +36,7 @@ export async function GET(request: NextRequest) {
   const supabase = createRouteHandlerClient(request, response);
 
   if (tokenHash && type) {
-    const { error } = await supabase.auth.verifyOtp({
-      token_hash: tokenHash,
-      type: type as EmailOtpType,
-    });
+    const { error } = await verifyMagicLinkOtp(supabase, tokenHash, type);
     if (!error) return response;
     return loginRedirect(request, {
       error: "auth",

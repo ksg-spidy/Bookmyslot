@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:auth": "node scripts/test-auth-helpers.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",

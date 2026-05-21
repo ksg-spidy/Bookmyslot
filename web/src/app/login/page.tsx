@@ -4,6 +4,7 @@ import { authLinkErrorMessage, parseAuthHashFragment } from "@/lib/authLinkError
 import { createClient } from "@/lib/supabase/client";
 import { formatLoginDestination } from "@/lib/formatLoginDestination";
 import { safeInternalPath } from "@/lib/safeNextPath";
+import { buildAuthConfirmUrl } from "@/lib/authConfirmUrl";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 
@@ -55,7 +56,7 @@ function LoginInner() {
     setStatus("sending");
     setMessage("");
     const supabase = createClient();
-    const confirmUrl = `${window.location.origin}/auth/confirm?next=${encodeURIComponent(nextPath)}`;
+    const confirmUrl = buildAuthConfirmUrl(nextPath, window.location.origin);
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: {

@@ -11,6 +11,7 @@ function ConfirmInner() {
   const searchParams = useSearchParams();
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type");
+  const code = searchParams.get("code");
   const redirectTo = searchParams.get("redirect_to");
   const nextPath = resolvePostLoginPath(searchParams.get("next"), redirectTo);
   const destinationLabel = formatLoginDestination(nextPath);
@@ -25,15 +26,23 @@ function ConfirmInner() {
   }, []);
 
   const completeHref = useMemo(() => {
-    if (!tokenHash || !type) return null;
-    const params = new URLSearchParams({
-      token_hash: tokenHash,
-      type,
-    });
-    if (redirectTo) params.set("redirect_to", redirectTo);
+    const params = new URLSearchParams();
     if (searchParams.get("next")) params.set("next", searchParams.get("next")!);
-    return `/auth/callback?${params.toString()}`;
-  }, [tokenHash, type, redirectTo, searchParams]);
+    if (redirectTo) params.set("redirect_to", redirectTo);
+
+    if (tokenHash && type) {
+      params.set("token_hash", tokenHash);
+      params.set("type", type);
+      return `/auth/callback?${params.toString()}`;
+    }
+
+    if (code) {
+      params.set("code", code);
+      return `/auth/callback?${params.toString()}`;
+    }
+
+    return null;
+  }, [tokenHash, type, code, redirectTo, searchParams]);
 
   if (hashError.errorCode) {
     return (

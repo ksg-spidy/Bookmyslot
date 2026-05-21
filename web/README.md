@@ -25,12 +25,23 @@ Next.js app with **Supabase** (Postgres + magic-link auth) and **Stripe Checkout
 
 **Authentication → URL configuration**
 
-- **Site URL:** `http://localhost:3000` (dev) and your production URL (e.g. `https://your-site.netlify.app`).
-- **Redirect URLs:** add (wildcards help, e.g. `https://your-site.netlify.app/**`)  
+- **Site URL:** `http://localhost:3000` (dev) and your production URL (e.g. `https://bookbadmintonslot.netlify.app`).
+- **Redirect URLs:** add (wildcards help, e.g. `https://bookbadmintonslot.netlify.app/**`)  
   `http://localhost:3000/auth/callback`  
   `http://localhost:3000/auth/confirm`  
-  `https://your-site.netlify.app/auth/callback`  
-  `https://your-site.netlify.app/auth/confirm`
+  `https://bookbadmintonslot.netlify.app/auth/callback`  
+  `https://bookbadmintonslot.netlify.app/auth/confirm`
+
+Set **`NEXT_PUBLIC_SITE_URL`** on Netlify to the same production origin (no trailing slash). Magic-link `emailRedirectTo` uses this so links always match the allow-list even on Netlify preview URLs.
+
+### Magic link not working?
+
+| Symptom | Likely cause | Fix |
+|--------|----------------|-----|
+| `otp_expired` before you click | Email app prefetched the link | Use the custom template in `supabase/email-templates/magic-link.html` (lands on `/auth/confirm` first). Request a new link and click **Complete sign-in** quickly. |
+| `pkce_error` / `bad_code_verifier` | Opened link in a different browser or in-app mail viewer | Open the email on the same device/browser where you requested the link, or paste the URL into Chrome/Safari. |
+| Redirect to login with `missing_token` | Supabase redirect URL not allow-listed | Add `/auth/callback` and `/auth/confirm` for your production host (see above). |
+| Email button goes nowhere | Default Supabase template still in use | Paste `magic-link.html` into **Authentication → Email Templates → Magic Link**. |
 
 ## 2b. Magic-link email template (recommended)
 
