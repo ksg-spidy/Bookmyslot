@@ -43,6 +43,19 @@ Default Supabase magic-link emails are minimal. ShuttleBook includes branded tem
 
 See `supabase/email-templates/README.md` for variables, OTP expiry alignment, and optional local `config.toml` setup.
 
+## 2c. Returning players (stay signed in)
+
+ShuttleBook keeps players signed in via **Supabase session cookies** on the same browser. After the first magic link, they can usually open **Sessions** without a new email.
+
+**In the app:** `/login` redirects if already signed in; the home page links to **Sessions** for returning users.
+
+**In Supabase (recommended):** **Authentication → Sessions**
+
+- Leave **time-box** and **inactivity timeout** off on the free tier, or set generous values on Pro (e.g. 30 days) so casual players are not logged out quickly.
+- Optional: **Authentication → Settings** → increase **JWT expiry** (up to 7 days) so access tokens refresh less often; refresh tokens still extend the session.
+
+Players need a new magic link only after **Sign out**, a new device, cleared cookies, or session expiry.
+
 ## 3. Environment variables
 
 Copy `.env.local.example` to `.env.local` and fill in:

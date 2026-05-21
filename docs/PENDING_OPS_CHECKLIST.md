@@ -121,6 +121,19 @@ In Supabase **SQL Editor**, run each file from `web/supabase/migrations/` **once
 
 ---
 
+## Phase 2c — Returning players (session persistence)
+
+**Goal:** Players who signed in once can book again on the same phone/browser without a new magic link.
+
+1. Deploy app code that redirects `/login` when a session cookie exists and shows “Already signed in” / “Try sessions first” copy.
+2. Supabase → **Authentication → Sessions** — avoid aggressive **inactivity** / **time-box** limits (Pro); on free tier, defaults usually allow long-lived refresh sessions.
+3. Optional: **Authentication → Settings** → raise **JWT expiry** if players report frequent logouts.
+4. Test: sign in once → close tab → reopen `https://your-site.netlify.app/sessions` → should still be signed in.
+
+**Done when:** Second visit on the same browser reaches sessions without a new email (until Sign out).
+
+---
+
 ## Phase 3 — Environment variables (local)
 
 **Goal:** `web/.env.local` has everything the server needs.

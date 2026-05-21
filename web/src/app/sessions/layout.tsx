@@ -18,7 +18,12 @@ export default async function SessionsLayout({
         <Link href="/sessions" className="font-semibold text-white">
           ShuttleBook
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1">
+          {user.email ? (
+            <span className="text-xs text-[#8b949e]" title="Stay signed in on this device">
+              {user.email}
+            </span>
+          ) : null}
           <Link href="/sessions/settings" className="text-sm text-[#8b949e] hover:text-white hover:underline">
             Profile
           </Link>
