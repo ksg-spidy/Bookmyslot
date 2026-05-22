@@ -1,4 +1,6 @@
+import { syncBookingAfterPayment } from "@/app/actions/syncBooking";
 import { YourBooking } from "@/app/sessions/[id]/YourBooking";
+import { getActiveBookingForUser } from "@/lib/bookings/queries";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -21,12 +23,12 @@ export default async function SessionDetailPage({ params, searchParams }: Props)
 
   if (error || !session) notFound();
 
-  const { data: booking } = await supabase
-    .from("bookings")
-    .select("status, waitlist_position")
-    .eq("play_session_id", id)
-    .eq("user_id", user.id)
-    .maybeSingle();
+  let booking = await getActiveBookingForUser(supabase, id, user.id);
+
+  if (sp.paid === "1" && !booking && sp.session_id?.trim()) {
+    await syncBookingAfterPayment(id, sp.session_id);
+    booking = await getActiveBookingForUser(supabase, id, user.id);
+  }
 
   const now = new Date();
   const deadline = new Date(session.booking_closes_at);

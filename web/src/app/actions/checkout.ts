@@ -1,5 +1,6 @@
 "use server";
 
+import { getActiveBookingForUser } from "@/lib/bookings/queries";
 import { createClient } from "@/lib/supabase/server";
 import Stripe from "stripe";
 
@@ -28,13 +29,7 @@ export async function startCheckout(playSessionId: string) {
     return { error: "Booking deadline has passed." };
   }
 
-  const { data: activeBooking } = await supabase
-    .from("bookings")
-    .select("status")
-    .eq("play_session_id", playSessionId)
-    .eq("user_id", user.id)
-    .in("status", ["confirmed", "waitlist", "pending_payment"])
-    .maybeSingle();
+  const activeBooking = await getActiveBookingForUser(supabase, playSessionId, user.id);
 
   if (activeBooking) {
     return { error: "You already have an active booking for this session." };

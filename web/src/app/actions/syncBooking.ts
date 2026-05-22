@@ -5,8 +5,8 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import Stripe from "stripe";
 
-const RETRIEVE_ATTEMPTS = 5;
-const RETRIEVE_DELAY_MS = 1500;
+const RETRIEVE_ATTEMPTS = 8;
+const RETRIEVE_DELAY_MS = 2000;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -43,25 +43,31 @@ export async function syncBookingAfterPayment(
     const admin = createServiceClient();
 
     let session: Stripe.Checkout.Session | null = null;
+    let lastReason = "checkout_not_ready";
     for (let attempt = 0; attempt < RETRIEVE_ATTEMPTS; attempt++) {
       const retrieved = await stripe.checkout.sessions.retrieve(checkoutId, {
         expand: ["payment_intent"],
       });
-      if (
-        retrieved.metadata?.play_session_id === playSessionId &&
-        retrieved.metadata?.user_id === user.id &&
-        (retrieved.payment_status === "paid" || retrieved.status === "complete")
-      ) {
+      const paid =
+        retrieved.payment_status === "paid" || retrieved.status === "complete";
+      const sessionMatch = retrieved.metadata?.play_session_id === playSessionId;
+      const userMatch = retrieved.metadata?.user_id === user.id;
+
+      if (paid && sessionMatch && userMatch) {
         session = retrieved;
         break;
       }
+      if (!paid) lastReason = "payment_not_completed";
+      else if (!sessionMatch) lastReason = "checkout_wrong_session";
+      else if (!userMatch) lastReason = "checkout_wrong_user";
+
       if (attempt < RETRIEVE_ATTEMPTS - 1) {
         await sleep(RETRIEVE_DELAY_MS);
       }
     }
 
     if (!session) {
-      return { synced: false, error: "checkout_not_ready" };
+      return { synced: false, error: lastReason };
     }
 
     const result = await fulfillBookingFromCheckoutSession(admin, session);

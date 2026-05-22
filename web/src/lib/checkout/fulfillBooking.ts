@@ -72,6 +72,26 @@ export async function fulfillBookingFromCheckoutSession(
     return { ok: true };
   }
 
+  const withdrawnRow = userId
+    ? await admin
+        .from("bookings")
+        .select("id")
+        .eq("play_session_id", playSessionId)
+        .eq("user_id", userId)
+        .eq("status", "withdrawn")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    : await admin
+        .from("bookings")
+        .select("id")
+        .eq("play_session_id", playSessionId)
+        .eq("whatsapp_identity_id", whatsappIdentityId)
+        .eq("status", "withdrawn")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
   const { count: confirmedCount, error: cErr } = await admin
     .from("bookings")
     .select("*", { count: "exact", head: true })
@@ -103,19 +123,71 @@ export async function fulfillBookingFromCheckoutSession(
     waitlistPosition = nextPos;
   }
 
-  const { error: insErr } = await admin.from("bookings").insert({
-    play_session_id: playSessionId,
-    user_id: userId,
-    whatsapp_identity_id: whatsappIdentityId,
+  const bookingPayload = {
     status,
     stripe_checkout_session_id: checkoutSessionId,
     stripe_payment_intent_id: paymentIntentId ?? null,
     waitlist_position: waitlistPosition,
-  });
+    updated_at: new Date().toISOString(),
+  };
 
-  if (insErr) {
-    console.error("Booking insert failed", insErr);
-    return { ok: false, reason: `insert_failed:${insErr.message}` };
+  if (withdrawnRow.data?.id) {
+    const { error: updErr } = await admin
+      .from("bookings")
+      .update(bookingPayload)
+      .eq("id", withdrawnRow.data.id);
+
+    if (updErr) {
+      console.error("Booking reactivate failed", updErr);
+      return { ok: false, reason: `update_failed:${updErr.message}` };
+    }
+  } else {
+    const { error: insErr } = await admin.from("bookings").insert({
+      play_session_id: playSessionId,
+      user_id: userId,
+      whatsapp_identity_id: whatsappIdentityId,
+      ...bookingPayload,
+    });
+
+    if (insErr) {
+      if (insErr.code === "23505") {
+        const retryWithdrawn = userId
+          ? await admin
+              .from("bookings")
+              .select("id")
+              .eq("play_session_id", playSessionId)
+              .eq("user_id", userId)
+              .eq("status", "withdrawn")
+              .limit(1)
+              .maybeSingle()
+          : await admin
+              .from("bookings")
+              .select("id")
+              .eq("play_session_id", playSessionId)
+              .eq("whatsapp_identity_id", whatsappIdentityId)
+              .eq("status", "withdrawn")
+              .limit(1)
+              .maybeSingle();
+
+        if (retryWithdrawn.data?.id) {
+          const { error: retryUpd } = await admin
+            .from("bookings")
+            .update(bookingPayload)
+            .eq("id", retryWithdrawn.data.id);
+          if (!retryUpd) {
+            // reactivated after unique conflict
+          } else {
+            return { ok: false, reason: `update_failed:${retryUpd.message}` };
+          }
+        } else {
+          console.error("Booking insert failed", insErr);
+          return { ok: false, reason: `insert_failed:${insErr.message}` };
+        }
+      } else {
+        console.error("Booking insert failed", insErr);
+        return { ok: false, reason: `insert_failed:${insErr.message}` };
+      }
+    }
   }
 
   if (whatsappIdentityId) {

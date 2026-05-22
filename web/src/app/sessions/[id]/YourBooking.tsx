@@ -2,6 +2,7 @@
 
 import { BookButton } from "@/app/sessions/[id]/BookButton";
 import { syncBookingAfterPayment } from "@/app/actions/syncBooking";
+import { getActiveBookingForUser } from "@/lib/bookings/queries";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -68,12 +69,7 @@ export function YourBooking({
         return;
       }
 
-      const { data } = await supabase
-        .from("bookings")
-        .select("status, waitlist_position")
-        .eq("play_session_id", sessionId)
-        .eq("user_id", user.id)
-        .maybeSingle();
+      const data = await getActiveBookingForUser(supabase, sessionId, user.id);
 
       if (data && !cancelled) {
         setLocalBooking(data);
@@ -115,9 +111,34 @@ export function YourBooking({
 
   if (confirming) {
     return (
-      <p className="mt-3 text-sm text-[#8b949e]">
-        Confirming your booking… this usually takes a few seconds.
-      </p>
+      <div className="mt-3 space-y-2 text-sm">
+        <p className="text-[#8b949e]">
+          Confirming your booking… this usually takes a few seconds.
+        </p>
+        {syncError ? (
+          <>
+            <p className="text-red-400">
+              Could not save yet ({syncError}). Retrying… or use the button below.
+            </p>
+            <button
+              type="button"
+              className="text-[#58a6ff] hover:underline"
+              onClick={() => {
+                void syncBookingAfterPayment(sessionId, stripeCheckoutSessionId).then((res) => {
+                  if (res.synced) {
+                    setSyncError(null);
+                    router.refresh();
+                  } else if (res.error) {
+                    setSyncError(res.error);
+                  }
+                });
+              }}
+            >
+              Retry save booking
+            </button>
+          </>
+        ) : null}
+      </div>
     );
   }
 
