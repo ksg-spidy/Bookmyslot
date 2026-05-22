@@ -1,9 +1,12 @@
-import { BookButton } from "@/app/sessions/[id]/BookButton";
+import { YourBooking } from "@/app/sessions/[id]/YourBooking";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ paid?: string; canceled?: string }> };
+type Props = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ paid?: string; canceled?: string; session_id?: string }>;
+};
 
 export default async function SessionDetailPage({ params, searchParams }: Props) {
   const { id } = await params;
@@ -58,22 +61,13 @@ export default async function SessionDetailPage({ params, searchParams }: Props)
 
       <div className="mt-8 border-t border-[#30363d] pt-6">
         <h2 className="text-lg font-medium text-white">Your booking</h2>
-        {!booking ? (
-          <div className="mt-3">
-            {open ? (
-              <BookButton sessionId={id} />
-            ) : (
-              <p className="text-sm text-[#8b949e]">Booking is not open for this session.</p>
-            )}
-          </div>
-        ) : (
-          <p className="mt-2 text-sm text-white">
-            Status: <strong className="capitalize">{booking.status}</strong>
-            {booking.status === "waitlist" && booking.waitlist_position != null
-              ? ` (queue #${booking.waitlist_position})`
-              : null}
-          </p>
-        )}
+        <YourBooking
+          sessionId={id}
+          open={open}
+          booking={booking}
+          justPaid={sp.paid === "1"}
+          stripeCheckoutSessionId={sp.session_id}
+        />
       </div>
     </div>
   );

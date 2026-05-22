@@ -71,7 +71,7 @@ export async function startCheckout(playSessionId: string) {
           play_session_id: playSessionId,
           user_id: user.id,
         },
-        success_url: `${site}/sessions/${playSessionId}?paid=1`,
+        success_url: `${site}/sessions/${playSessionId}?paid=1&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${site}/sessions/${playSessionId}?canceled=1`,
       },
       { idempotencyKey: `checkout-${user.id}-${playSessionId}` }
