@@ -43,6 +43,13 @@ Default Supabase magic-link emails are minimal. ShuttleBook includes branded tem
 
 See `supabase/email-templates/README.md` for variables, OTP expiry alignment, and optional local `config.toml` setup.
 
+### Admin password sign-in (players keep magic link)
+
+1. **Authentication → Providers → Email** — enable Email, turn on **Confirm email** if you want, and enable **Email + password** (allow users to sign in with password).
+2. For each admin user: **Authentication → Users** → select user → **Reset password** or set password when creating the user.
+3. Ensure `profiles.role = 'admin'` for that user (see step 5 in §1).
+4. Admins sign in at **`/admin/login`** with email + password. Players use **`/login`** (magic link only).
+
 ## 3. Environment variables
 
 Copy `.env.local.example` to `.env.local` and fill in:
@@ -81,7 +88,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000), sign in with magic link, go to **Admin** (admin role), create a session, then open **Player view** and book with another test user (or incognito).
+Open [http://localhost:3000](http://localhost:3000). Admin: **Admin sign-in** → `/admin/login`. Players: magic link at `/login`. Create a session in admin, then book from **Player view** with another account (or incognito).
 
 ## 6. Netlify
 
@@ -95,7 +102,8 @@ Open [http://localhost:3000](http://localhost:3000), sign in with magic link, go
 | Path | Role |
 |------|------|
 | `/` | Landing / redirect |
-| `/login` | Magic link |
+| `/login` | Player magic link |
+| `/admin/login` | Admin email + password |
 | `/sessions` | Player sessions list |
 | `/sessions/[id]` | Book (Stripe) after sign-in |
 | `/admin` | Admin dashboard |

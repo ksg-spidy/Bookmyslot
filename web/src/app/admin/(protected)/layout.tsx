@@ -2,13 +2,13 @@ import { getProfile, getSessionUser } from "@/lib/auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-export default async function AdminLayout({
+export default async function AdminProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const user = await getSessionUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/admin/login");
 
   const profile = await getProfile();
   if (profile?.role !== "admin") {

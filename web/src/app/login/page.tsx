@@ -4,6 +4,7 @@ import { authLinkErrorMessage, parseAuthHashFragment } from "@/lib/authLinkError
 import { createClient } from "@/lib/supabase/client";
 import { formatLoginDestination } from "@/lib/formatLoginDestination";
 import { safeInternalPath } from "@/lib/safeNextPath";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 
@@ -79,7 +80,11 @@ function LoginInner() {
     <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">
       <h1 className="mb-2 text-2xl font-semibold text-white">ShuttleBook</h1>
       <p className="mb-6 text-sm text-[#8b949e]">
-        Sign in with a one-time email link. No password.
+        Player sign-in with a one-time email link. Admins use password at{" "}
+        <Link href="/admin/login" className="text-[#58a6ff] hover:underline">
+          /admin/login
+        </Link>
+        .
       </p>
 
       {authError ? (
@@ -118,9 +123,9 @@ function LoginInner() {
                     You will land on {destinationLabel}
                     {nextPath !== "/" ? (
                       <>
-                            {" "}
-                            (<span className="text-[#e6edf3]">{nextPath}</span>)
-                          </>
+                        {" "}
+                        (<span className="text-[#e6edf3]">{nextPath}</span>)
+                      </>
                     ) : null}
                     .
                   </li>

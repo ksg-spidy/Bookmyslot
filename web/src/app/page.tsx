@@ -16,12 +16,20 @@ export default async function HomePage() {
       <p className="mt-2 text-[#8b949e]">
         Badminton session booking — sign in to book a spot or manage sessions (admin).
       </p>
-      <Link
-        href="/login"
-        className="mt-8 inline-block rounded-lg bg-[#238636] px-4 py-3 text-center font-medium text-white hover:bg-[#2ea043]"
-      >
-        Sign in with email
-      </Link>
+      <div className="mt-8 flex flex-col gap-3">
+        <Link
+          href="/login"
+          className="inline-block rounded-lg bg-[#238636] px-4 py-3 text-center font-medium text-white hover:bg-[#2ea043]"
+        >
+          Player sign-in (magic link)
+        </Link>
+        <Link
+          href="/admin/login"
+          className="inline-block rounded-lg border border-[#30363d] px-4 py-3 text-center text-sm text-[#8b949e] hover:border-[#58a6ff] hover:text-white"
+        >
+          Admin sign-in (email + password)
+        </Link>
+      </div>
     </div>
   );
 }

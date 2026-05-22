@@ -1,4 +1,4 @@
-import { AdminSessionForm } from "@/app/admin/AdminSessionForm";
+import { AdminSessionForm } from "@/app/admin/(protected)/AdminSessionForm";
 import { lockPlaySessionForm } from "@/app/actions/sessions";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
@@ -70,4 +70,3 @@ export default async function AdminHomePage() {
     </div>
   );
 }
-
