@@ -1,3 +1,4 @@
+import { AdminSyncBookingForm } from "@/app/admin/(protected)/sessions/[id]/AdminSyncBookingForm";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
@@ -52,6 +53,8 @@ export default async function AdminSessionBookingsPage({ params }: Props) {
           Export CSV
         </a>
       </p>
+
+      <AdminSyncBookingForm playSessionId={id} />
 
       {be ? (
         <p className="mt-4 text-red-400">{be.message}</p>
