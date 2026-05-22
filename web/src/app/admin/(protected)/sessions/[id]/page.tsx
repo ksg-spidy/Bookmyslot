@@ -1,3 +1,4 @@
+import { createServiceClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -7,24 +8,28 @@ type Props = { params: Promise<{ id: string }> };
 export default async function AdminSessionBookingsPage({ params }: Props) {
   const { id } = await params;
   const supabase = await createClient();
+  const admin = createServiceClient();
 
   const { data: session, error: se } = await supabase.from("play_sessions").select("*").eq("id", id).single();
   if (se || !session) notFound();
 
-  const { data: bookings, error: be } = await supabase
+  const { data: bookings, error: be } = await admin
     .from("bookings")
     .select("id, status, waitlist_position, created_at, user_id")
     .eq("play_session_id", id)
     .order("created_at", { ascending: true });
 
-  const userIds = [...new Set((bookings ?? []).map((b) => b.user_id))];
-  const { data: profiles } = await supabase.from("profiles").select("id, full_name, phone").in("id", userIds);
+  const userIds = [...new Set((bookings ?? []).map((b) => b.user_id).filter(Boolean))] as string[];
+  const { data: profiles } =
+    userIds.length > 0
+      ? await admin.from("profiles").select("id, full_name, phone").in("id", userIds)
+      : { data: [] as { id: string; full_name: string | null; phone: string | null }[] };
 
   const profileMap = new Map((profiles ?? []).map((p) => [p.id, p]));
 
   const rows =
     bookings?.map((b) => {
-      const p = profileMap.get(b.user_id);
+      const p = b.user_id ? profileMap.get(b.user_id) : undefined;
       return {
         ...b,
         full_name: p?.full_name ?? "—",

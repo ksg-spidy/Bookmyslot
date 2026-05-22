@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export async function POST(request: Request) {
   const secret = process.env.STRIPE_SECRET_KEY;
   const whSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!secret || !whSecret) {
+  if (!secret || !whSecret || secret.includes("...") || whSecret.includes("...")) {
     return NextResponse.json({ error: "Stripe not configured" }, { status: 500 });
   }
 
@@ -29,10 +29,16 @@ export async function POST(request: Request) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    const admin = createServiceClient();
-    const result = await fulfillBookingFromCheckoutSession(admin, session);
-    if (!result.ok) {
-      console.error("Booking fulfillment failed", session.id, result.reason);
+    try {
+      const admin = createServiceClient();
+      const result = await fulfillBookingFromCheckoutSession(admin, session);
+      if (!result.ok) {
+        console.error("Booking fulfillment failed", session.id, result.reason);
+        return NextResponse.json({ error: result.reason }, { status: 500 });
+      }
+    } catch (e) {
+      console.error("Webhook fulfillment error", session.id, e);
+      return NextResponse.json({ error: "fulfillment_error" }, { status: 500 });
     }
   }
 

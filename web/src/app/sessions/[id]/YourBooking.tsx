@@ -27,11 +27,13 @@ export function YourBooking({
   const router = useRouter();
   const [localBooking, setLocalBooking] = useState<Booking | null>(booking);
   const [confirming, setConfirming] = useState(justPaid && !booking);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   useEffect(() => {
     setLocalBooking(booking);
     if (booking) {
       setConfirming(false);
+      setSyncError(null);
     }
   }, [booking]);
 
@@ -41,11 +43,19 @@ export function YourBooking({
     }
 
     let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 15;
 
-    async function trySync() {
-      await syncBookingAfterPayment(sessionId, stripeCheckoutSessionId);
-      if (!cancelled) {
+    async function runSync() {
+      const res = await syncBookingAfterPayment(sessionId, stripeCheckoutSessionId);
+      if (cancelled) return;
+      if (res.synced) {
+        setSyncError(null);
         router.refresh();
+        return;
+      }
+      if (res.error) {
+        setSyncError(res.error);
       }
     }
 
@@ -68,25 +78,25 @@ export function YourBooking({
       if (data && !cancelled) {
         setLocalBooking(data);
         setConfirming(false);
+        setSyncError(null);
         router.refresh();
       }
     }
 
-    void trySync();
+    void runSync();
     const interval = window.setInterval(() => {
+      attempts += 1;
+      void runSync();
       void pollForBooking();
+      if (attempts >= maxAttempts) {
+        window.clearInterval(interval);
+        setConfirming(false);
+      }
     }, 2000);
-
-    const stop = window.setTimeout(() => {
-      cancelled = true;
-      window.clearInterval(interval);
-      setConfirming(false);
-    }, 45000);
 
     return () => {
       cancelled = true;
       window.clearInterval(interval);
-      window.clearTimeout(stop);
     };
   }, [justPaid, localBooking, sessionId, stripeCheckoutSessionId, router]);
 
@@ -108,6 +118,30 @@ export function YourBooking({
       <p className="mt-3 text-sm text-[#8b949e]">
         Confirming your booking… this usually takes a few seconds.
       </p>
+    );
+  }
+
+  if (justPaid && syncError) {
+    return (
+      <div className="mt-3 space-y-2 text-sm">
+        <p className="text-red-400">
+          Payment was received but the booking could not be saved ({syncError}). Try refresh, or
+          contact the organiser with your payment confirmation.
+        </p>
+        <button
+          type="button"
+          className="text-[#58a6ff] hover:underline"
+          onClick={() => {
+            setConfirming(true);
+            setSyncError(null);
+            void syncBookingAfterPayment(sessionId, stripeCheckoutSessionId).then(() =>
+              router.refresh()
+            );
+          }}
+        >
+          Retry save booking
+        </button>
+      </div>
     );
   }
 

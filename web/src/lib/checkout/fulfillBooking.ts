@@ -4,14 +4,18 @@ import type Stripe from "stripe";
 
 type AdminClient = SupabaseClient;
 
+function isCheckoutPaid(session: Pick<Stripe.Checkout.Session, "payment_status" | "status">): boolean {
+  return session.payment_status === "paid" || session.status === "complete";
+}
+
 export async function fulfillBookingFromCheckoutSession(
   admin: AdminClient,
   session: Pick<
     Stripe.Checkout.Session,
-    "id" | "metadata" | "payment_intent" | "payment_status"
+    "id" | "metadata" | "payment_intent" | "payment_status" | "status"
   >
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
-  if (session.payment_status !== "paid") {
+  if (!isCheckoutPaid(session)) {
     return { ok: false, reason: "payment_not_completed" };
   }
 
@@ -110,7 +114,8 @@ export async function fulfillBookingFromCheckoutSession(
   });
 
   if (insErr) {
-    return { ok: false, reason: "insert_failed" };
+    console.error("Booking insert failed", insErr);
+    return { ok: false, reason: `insert_failed:${insErr.message}` };
   }
 
   if (whatsappIdentityId) {

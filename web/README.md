@@ -80,6 +80,10 @@ On a session’s booking page: **Export CSV** downloads bookings for that sessio
 3. Event: `checkout.session.completed`
 4. Copy the **signing secret** into `STRIPE_WEBHOOK_SECRET`
 
+Bookings are created when the webhook runs, or when the player returns from checkout (server sync). On Netlify you **must** set real `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and `SUPABASE_SERVICE_ROLE_KEY` (not placeholders).
+
+Run `supabase/migrations/005_bookings_rebook_after_withdraw.sql` in the SQL Editor after earlier migrations.
+
 ## 5. Local run
 
 ```bash

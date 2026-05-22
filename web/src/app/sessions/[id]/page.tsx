@@ -50,9 +50,15 @@ export default async function SessionDetailPage({ params, searchParams }: Props)
         Booking closes: {deadline.toLocaleString()} · Max players: {session.max_players}
       </p>
 
-      {sp.paid === "1" ? (
+      {sp.paid === "1" && !booking ? (
         <p className="mt-4 rounded-lg border border-[#238636] bg-[#0c2218] p-3 text-sm text-[#3fb950]">
-          Payment submitted — your spot updates in a few seconds after Stripe confirms. Refresh if needed.
+          Payment received — saving your booking now. This page will update in a few seconds.
+        </p>
+      ) : null}
+      {sp.paid === "1" && booking ? (
+        <p className="mt-4 rounded-lg border border-[#238636] bg-[#0c2218] p-3 text-sm text-[#3fb950]">
+          Payment received — your booking is{" "}
+          <strong className="capitalize">{booking.status}</strong>.
         </p>
       ) : null}
       {sp.canceled === "1" ? (
