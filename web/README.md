@@ -46,9 +46,22 @@ See `supabase/email-templates/README.md` for variables, OTP expiry alignment, an
 ### Admin password sign-in (players keep magic link)
 
 1. **Authentication → Providers → Email** — enable Email, turn on **Confirm email** if you want, and enable **Email + password** (allow users to sign in with password).
-2. For each admin user: **Authentication → Users** → select user → **Reset password** or set password when creating the user.
-3. Ensure `profiles.role = 'admin'` for that user (see step 5 in §1).
+2. Set the admin password (pick one):
+   - **Recommended (no email):** from `web/`, with `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`:
+     ```bash
+     node scripts/set-admin-password.mjs admin@example.com 'YourSecurePassword'
+     ```
+   - **Dashboard:** **Authentication → Users** → user → **Reset password** — only works within Supabase’s email limits (see below).
+3. Ensure `profiles.role = 'admin'` for that user (the script above sets this; or see step 5 in §1).
 4. Admins sign in at **`/admin/login`** with email + password. Players use **`/login`** (magic link only).
+
+#### “Email rate limit exceeded” on password reset
+
+Supabase’s **built-in SMTP** allows only a few auth emails per hour (signup, magic link, and **password recovery** all count). Repeated **Send password recovery** in the dashboard hits `over_email_send_rate_limit` on `/auth/v1/recover`.
+
+**Immediate fix:** use `scripts/set-admin-password.mjs` (service role updates the password directly; no email sent).
+
+**Production fix:** **Authentication → SMTP** — configure custom SMTP (e.g. Resend, SendGrid) so recovery and magic-link limits follow your provider, not the built-in cap. Optionally raise limits under **Authentication → Rate Limits**.
 
 ## 3. Environment variables
 
