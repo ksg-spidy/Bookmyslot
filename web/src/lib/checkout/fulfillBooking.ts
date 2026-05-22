@@ -19,7 +19,7 @@ export async function fulfillBookingFromCheckoutSession(
     return { ok: false, reason: "payment_not_completed" };
   }
 
-  const playSessionId = session.metadata?.play_session_id;
+  const playSessionId = session.metadata?.play_session_id?.trim();
   const userId = session.metadata?.user_id ?? null;
   const whatsappIdentityId = session.metadata?.whatsapp_identity_id ?? null;
   const checkoutSessionId = session.id;
@@ -38,8 +38,17 @@ export async function fulfillBookingFromCheckoutSession(
     .eq("id", playSessionId)
     .single();
 
-  if (pErr || !playSession || playSession.status !== "open") {
-    return { ok: false, reason: "invalid_play_session" };
+  if (pErr || !playSession) {
+    console.error("play_sessions lookup", playSessionId, pErr);
+    return {
+      ok: false,
+      reason: pErr ? `play_session_lookup:${pErr.message}` : "play_session_not_found",
+    };
+  }
+
+  // Paid checkout must be fulfilled even if admin locked the slot after checkout started.
+  if (playSession.status !== "open" && playSession.status !== "locked") {
+    return { ok: false, reason: `play_session_unavailable:${playSession.status}` };
   }
 
   const { data: existing } = await admin
