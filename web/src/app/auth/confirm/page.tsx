@@ -1,19 +1,24 @@
 "use client";
 
+import { completeMagicLinkSignIn } from "@/app/actions/completeMagicLink";
 import { authLinkErrorMessage, parseAuthHashFragment } from "@/lib/authLinkErrors";
 import { resolvePostLoginPath } from "@/lib/authCallback";
 import { formatLoginDestination } from "@/lib/formatLoginDestination";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useState, useTransition } from "react";
 
 function ConfirmInner() {
   const searchParams = useSearchParams();
-  const tokenHash = searchParams.get("token_hash");
-  const type = searchParams.get("type");
   const redirectTo = searchParams.get("redirect_to");
-  const nextPath = resolvePostLoginPath(searchParams.get("next"), redirectTo);
+  const nextParam = searchParams.get("next");
+  const nextPath = resolvePostLoginPath(nextParam, redirectTo);
   const destinationLabel = formatLoginDestination(nextPath);
+
+  const [tokenHash, setTokenHash] = useState<string | null>(null);
+  const [otpType, setOtpType] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
 
   const [hashError, setHashError] = useState<{
     errorCode: string | null;
@@ -24,16 +29,41 @@ function ConfirmInner() {
     setHashError(parseAuthHashFragment(window.location.hash));
   }, []);
 
-  const completeHref = useMemo(() => {
-    if (!tokenHash || !type) return null;
-    const params = new URLSearchParams({
-      token_hash: tokenHash,
-      type,
+  useEffect(() => {
+    const fromUrlHash = searchParams.get("token_hash");
+    const fromUrlType = searchParams.get("type");
+    if (fromUrlHash && fromUrlType) {
+      setTokenHash(fromUrlHash);
+      setOtpType(fromUrlType);
+      const clean = new URL(window.location.href);
+      clean.searchParams.delete("token_hash");
+      clean.searchParams.delete("type");
+      const qs = clean.searchParams.toString();
+      window.history.replaceState(
+        {},
+        "",
+        `${clean.pathname}${qs ? `?${qs}` : ""}`
+      );
+    }
+  }, [searchParams]);
+
+  function handleComplete() {
+    if (!tokenHash || !otpType) return;
+    setSubmitError(null);
+    startTransition(async () => {
+      const res = await completeMagicLinkSignIn(
+        tokenHash,
+        otpType,
+        nextParam,
+        redirectTo
+      );
+      if (res?.error) {
+        setSubmitError(
+          authLinkErrorMessage(res.errorCode ?? "verify_failed", res.error)
+        );
+      }
     });
-    if (redirectTo) params.set("redirect_to", redirectTo);
-    if (searchParams.get("next")) params.set("next", searchParams.get("next")!);
-    return `/auth/callback?${params.toString()}`;
-  }, [tokenHash, type, redirectTo, searchParams]);
+  }
 
   if (hashError.errorCode) {
     return (
@@ -49,7 +79,7 @@ function ConfirmInner() {
     );
   }
 
-  if (!completeHref) {
+  if (!tokenHash || !otpType) {
     return (
       <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">
         <h1 className="mb-2 text-2xl font-semibold text-white">ShuttleBook</h1>
@@ -80,12 +110,19 @@ function ConfirmInner() {
         ) : null}
         .
       </p>
-      <a
-        href={completeHref}
-        className="rounded-lg bg-[#238636] py-3 text-center font-medium text-white hover:bg-[#2ea043]"
+      {submitError ? (
+        <p className="mb-4 text-sm text-red-400" role="alert">
+          {submitError}
+        </p>
+      ) : null}
+      <button
+        type="button"
+        disabled={pending}
+        onClick={handleComplete}
+        className="rounded-lg bg-[#238636] py-3 text-center font-medium text-white hover:bg-[#2ea043] disabled:opacity-60"
       >
-        Complete sign-in
-      </a>
+        {pending ? "Signing in…" : "Complete sign-in"}
+      </button>
       <p className="mt-4 text-xs text-[#8b949e]">
         Link expires in 1 hour. Use the same browser where you requested the email when possible.
       </p>

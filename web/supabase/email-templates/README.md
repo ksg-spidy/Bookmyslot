@@ -25,7 +25,7 @@ In **Authentication** → **Providers** → **Email**, confirm **OTP expiry** ma
 
 ### Why `/auth/confirm`?
 
-Email providers often **prefetch** magic links, which consumes the one-time token (`otp_expired`). The template links to `/auth/confirm` first; the user clicks **Complete sign-in** to run verification.
+Email providers often **prefetch** links in HTML. The app verifies the token only when the user clicks **Complete sign-in** (POST server action), not via a `/auth/callback` link in the page. The email should link to `/auth/confirm?…&token_hash=…` only — never use `{{ .ConfirmationURL }}` (that verifies on first GET and causes `otp_expired`).
 
 **Redirect URLs (required):** In **Authentication → URL configuration**, add (replace host with yours):
 

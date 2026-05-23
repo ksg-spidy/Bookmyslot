@@ -1,60 +1,144 @@
 # Agent handover — ShuttleBook (Badminton booking)
 
-Use the **block below** as the first message in a **new agent chat** (set workspace root to this repo: `Badminton booking`).
+Use the **block below** as the first message in a **new agent chat** (workspace root: `Badminton booking`).
 
 ---
 
-## Paste into new agent (system prompt / first message)
+## Paste into new agent (first message)
 
 ```
-You are continuing the ShuttleBook project in the "Badminton booking" monorepo.
+You are continuing ShuttleBook — a badminton session booking app in the "Badminton booking" monorepo.
 
-GOAL
-- WhatsApp-first badminton session booking: players message a WhatsApp Business number; backend handles webhooks, Stripe Checkout links, and Supabase state. Web app (Next.js) already exists for logged-in players and admin.
+## PRODUCT
+- **Players:** magic-link sign-in at `/login`, book sessions via Stripe Checkout at `/sessions/[id]`.
+- **Admins:** email + password at `/admin/login`, manage sessions and bookings at `/admin`.
+- **WhatsApp (partial):** inbound webhook, BOOK/STATUS commands, Stripe checkout links (see `web/src/lib/whatsapp/`).
 
-WHAT IS ALREADY DONE (do not redo unless broken)
-- Next.js 15 app under `web/` (deployed via Netlify + `@netlify/plugin-nextjs`, see `web/netlify.toml`).
-- Supabase: `play_sessions`, `bookings`, `profiles`, Stripe webhook at `web/src/app/api/webhooks/stripe/route.ts` (raw body + signature). Web checkout in `web/src/app/actions/checkout.ts`.
-- WhatsApp Cloud API scaffold:
-  - `web/src/app/api/webhooks/whatsapp/route.ts` — GET hub.verify + POST with `X-Hub-Signature-256` verification.
-  - `web/src/lib/whatsapp/verifySignature.ts`, `sendText.ts`, `processInbound.ts` — text commands HELP, BOOK, STATUS; BOOK creates Stripe Checkout via `web/src/lib/checkout/createWhatsAppCheckout.ts` and sends payment URL in WhatsApp.
-  - Stripe webhook updated to accept EITHER `metadata.user_id` (web) OR `metadata.whatsapp_identity_id` (WA) and insert `bookings` accordingly.
-- SQL migration file (must be applied in Supabase): `web/supabase/migrations/002_whatsapp.sql` — `whatsapp_identities`, `whatsapp_processed_messages`, nullable `bookings.user_id`, `bookings.whatsapp_identity_id`, XOR constraint, partial unique indexes.
-- Env template: `web/.env.local.example` (WhatsApp + existing Supabase/Stripe vars).
-- Reference / recovery doc: `docs/BUILD_WHATSAPP_KICKOFF.md`.
-- `@supabase/supabase-js` / `@supabase/ssr` were upgraded so `npm run build` passes (previous realtime-js strict type issue).
+## PRODUCTION
+- **Netlify:** https://bookbadmintonslot.netlify.app (base directory `web/`, `web/netlify.toml`)
+- **GitHub:** https://github.com/ksg-spidy/Bookmyslot (branch `main`)
+- **Supabase project ref:** `galtalsgxrbqapkfatky` → `https://galtalsgxrbqapkfatky.supabase.co`
+- **Admin user (example):** kumarskand@gmail.com — `profiles.role = 'admin'`
 
-YOUR CONSTRAINTS
-- Prefer small, focused diffs; match existing patterns in `web/src`.
-- Run `npm run build` inside `web/` after substantive changes.
-- Do not commit secrets; use env vars only.
+## WHAT WAS DONE RECENTLY (May 2026)
+1. **Admin password** — `web/scripts/set-admin-password.mjs` + `npm run set-admin-password` (service role, no email; bypasses Supabase built-in SMTP rate limits).
+2. **Post-payment booking** — `fulfillBookingFromCheckoutSession` allows `locked` sessions; sync via `syncBookingAfterPayment` + Stripe webhook.
+3. **Magic link URL fix** — custom email template `web/supabase/email-templates/magic-link.html` appends `&token_hash=` only after `/auth/confirm?…` (fallback when `RedirectTo` is site root only).
+4. **Magic link prefetch fix (LOCAL, NOT YET COMMITTED)** — `web/src/app/auth/confirm/page.tsx` no longer renders `<a href="/auth/callback?token_hash=…">` (email scanners prefetched that and caused `otp_expired`). Verification moved to POST server action `web/src/app/actions/completeMagicLink.ts` + button "Complete sign-in". Token stripped from URL via `history.replaceState` after load.
+5. **Supabase apply script** — `web/scripts/apply-supabase-auth-config.mjs` + `npm run apply-supabase-auth` (needs `SUPABASE_ACCESS_TOKEN` in `.env.local` from https://supabase.com/dashboard/account/tokens).
 
-LIKELY NEXT TASKS (pick what the user asks for)
-1. Ops: Confirm `002_whatsapp.sql` was applied on production Supabase; if not, apply and verify RLS/service-role paths.
-2. Meta: Register production webhook URL `https://<NETLIFY_DOMAIN>/api/webhooks/whatsapp`, set `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` in Netlify + local `.env.local`.
-3. Product: After Stripe `checkout.session.completed`, send a WhatsApp confirmation message to `wa_id` (lookup via `whatsapp_identity_id`); handle waitlist vs confirmed copy.
-4. UX parity with `ShuttleBook_Player_Preview.html`: interactive message buttons (max 3 per message per Meta rules), roster reply (“who’s coming”), WITHDRAW + Stripe refund path — all server-side rules.
-5. Optional: Link `whatsapp_identities.profile_id` to Supabase `auth.users` / `profiles` (magic link or admin flow).
+## UNCOMMITTED WORK (commit + deploy first)
+```
+M  web/src/app/auth/confirm/page.tsx
+M  web/supabase/email-templates/README.md
+?? web/src/app/actions/completeMagicLink.ts
+?? web/src/app/auth/confirm/layout.tsx
+```
+After commit: push `main` → Netlify auto-deploy. Re-paste `magic-link.html` in Supabase if template not applied via script.
 
-KEY PATHS
-- Web app root: `web/`
-- Build: `cd web && npm run build`
-- Static HTML spec (conversation demo): repo root `ShuttleBook_Player_Preview.html`
-- Plan / feasibility notes: `c:\Users\kumar\.cursor\plans\player_preview_to_app_96e85b0c.plan.md` (if still present)
+## KNOWN PRODUCTION ISSUES & FIXES
 
-Start by: (1) reading `web/src/lib/whatsapp/processInbound.ts` and `web/src/app/api/webhooks/stripe/route.ts`, (2) confirming migration status with the user or by inferring from errors, (3) implementing the user’s specific next request.
+### A. `play_session_lookup:Invalid API key` after Stripe payment
+- **Cause:** Netlify missing/wrong `SUPABASE_SERVICE_ROLE_KEY` (or URL/key from different projects).
+- **Fix:** Netlify env vars: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (service_role, not anon). Redeploy. Player clicks "Retry save booking" on session page.
+
+### B. Magic link `otp_expired` / invalid URL
+- **Invalid URL** (`…netlify.app&token_hash=…`): Supabase **Redirect URLs** missing `/auth/confirm**` → `emailRedirectTo` ignored; update template from repo + add redirect URLs.
+- **otp_expired before user clicks:** (1) Dashboard still using default template with `{{ .ConfirmationURL }}` (verifies on GET). (2) Old confirm page exposed `/auth/callback?token_hash=` in HTML (fixed in uncommitted code). (3) Email scanner consumed link — user must request **new** link after fixes.
+- **Supabase checklist:**
+  - Site URL: `https://bookbadmintonslot.netlify.app`
+  - Redirect URLs: `https://bookbadmintonslot.netlify.app/auth/confirm**`, `…/auth/callback**`, `http://localhost:3000/auth/confirm**`, etc.
+  - Email template: paste `web/supabase/email-templates/magic-link.html` + subject from `magic-link-subject.txt`
+  - Or: `SUPABASE_ACCESS_TOKEN` in `.env.local` → `cd web && npm run apply-supabase-auth`
+
+### C. Admin password reset rate limit
+- Use `npm run set-admin-password -- email@example.com 'password'` (min 8 chars), not Supabase dashboard "Send recovery".
+
+## KEY PATHS
+| Area | Path |
+|------|------|
+| Next app | `web/` |
+| Build | `cd web && npm run build` |
+| Player login | `web/src/app/login/page.tsx` |
+| Magic confirm | `web/src/app/auth/confirm/page.tsx` |
+| Auth callback (PKCE/code) | `web/src/app/auth/callback/route.ts` |
+| Confirm URL builder | `web/src/lib/authConfirmUrl.ts` |
+| Booking fulfillment | `web/src/lib/checkout/fulfillBooking.ts` |
+| Post-checkout sync | `web/src/app/actions/syncBooking.ts` |
+| Stripe webhook | `web/src/app/api/webhooks/stripe/route.ts` |
+| WhatsApp webhook | `web/src/app/api/webhooks/whatsapp/route.ts` |
+| Migrations | `web/supabase/migrations/001_initial.sql` … `005_*.sql` |
+| Env template | `web/.env.local.example` |
+| Setup README | `web/README.md` |
+
+## DEV SCRIPTS (`web/scripts/`)
+- `set-admin-password.mjs` — admin password + role
+- `apply-supabase-auth-config.mjs` — Management API: template + redirect URLs
+- `magic-link.mjs` — generate test confirm URL: `node scripts/magic-link.mjs email /sessions http://localhost:3000`
+- `list-admins.mjs`, `e2e-setup.mjs`, `test-fulfill*.mjs`
+
+## NETLIFY ENV (production — verify all set)
+- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+- `NEXT_PUBLIC_SITE_URL` = `https://bookbadmintonslot.netlify.app` (no trailing slash)
+- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_CURRENCY` (optional)
+- WhatsApp vars if enabled (see `.env.local.example`)
+
+## CONSTRAINTS
+- Small focused diffs; match existing patterns.
+- Run `npm run build` in `web/` after substantive changes.
+- Never commit `.env.local` or secrets.
+- Only commit when user asks.
+
+## SUGGESTED NEXT STEPS (if user doesn’t specify)
+1. Commit + push uncommitted magic-link prefetch fix; verify on production with fresh magic link.
+2. Run `npm run apply-supabase-auth` (or manual Supabase dashboard) if magic links still broken.
+3. Verify Netlify `SUPABASE_SERVICE_ROLE_KEY` if bookings fail after payment.
+4. Continue WhatsApp product work per `docs/BUILD_WHATSAPP_KICKOFF.md` (confirm `002_whatsapp.sql` applied).
+
+Start by reading uncommitted `completeMagicLink.ts` + `auth/confirm/page.tsx`, then ask the user which issue to tackle or proceed with commit/deploy of the prefetch fix.
 ```
 
 ---
 
-## Maintainer notes
+## Quick reference
 
-| Item | Location |
-|------|----------|
-| Netlify site | Build `web/`; team context in plan: kumarskand Netlify team |
-| Stripe webhook URL | `/api/webhooks/stripe` — must match Stripe Dashboard + `STRIPE_WEBHOOK_SECRET` |
-| WhatsApp webhook URL | `/api/webhooks/whatsapp` |
-| Initial schema | `web/supabase/migrations/001_initial.sql` |
-| WhatsApp schema | `web/supabase/migrations/002_whatsapp.sql` |
+| Item | Value |
+|------|--------|
+| Production URL | https://bookbadmintonslot.netlify.app |
+| Supabase ref | `galtalsgxrbqapkfatky` |
+| Repo | `ksg-spidy/Bookmyslot` |
+| Player auth | Magic link → `/auth/confirm` → POST verify |
+| Admin auth | `/admin/login` (email + password) |
+| Stripe webhook | `/api/webhooks/stripe` |
+| WhatsApp webhook | `/api/webhooks/whatsapp` |
 
-If the new agent sees **missing column / relation** errors at runtime, the WhatsApp migration was not applied to the linked Supabase project.
+## Auth flow (current design)
+
+```mermaid
+sequenceDiagram
+  participant User
+  participant Email
+  participant Confirm as /auth/confirm
+  participant Action as completeMagicLinkSignIn
+  participant Supabase
+
+  User->>Email: Request link at /login
+  Email->>Confirm: Link with token_hash (not ConfirmationURL)
+  Note over Confirm: Strip token from URL in browser
+  User->>Confirm: Click Complete sign-in
+  Confirm->>Action: POST verifyOtp
+  Action->>Supabase: verifyOtp token_hash
+  Action->>User: Redirect to /sessions
+```
+
+**Do not** put `token_hash` in a static `<a href="/auth/callback?...">` on the confirm page — scanners prefetch it and burn the OTP.
+
+## Migration order (Supabase SQL Editor)
+
+1. `001_initial.sql`
+2. `002_whatsapp.sql` (if using WhatsApp)
+3. `003_whatsapp_link_tokens.sql`
+4. `004_booking_unique_active_only.sql`
+5. `005_bookings_rebook_after_withdraw.sql`
+
+If runtime errors mention missing tables/columns, a migration was not applied on the linked project.
