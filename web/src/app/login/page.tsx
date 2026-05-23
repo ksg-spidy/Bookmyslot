@@ -1,6 +1,7 @@
 "use client";
 
 import { authLinkErrorMessage, parseAuthHashFragment } from "@/lib/authLinkErrors";
+import { buildAuthConfirmRedirectUrl } from "@/lib/authConfirmUrl";
 import { createClient } from "@/lib/supabase/client";
 import { formatLoginDestination } from "@/lib/formatLoginDestination";
 import { safeInternalPath } from "@/lib/safeNextPath";
@@ -56,7 +57,7 @@ function LoginInner() {
     setStatus("sending");
     setMessage("");
     const supabase = createClient();
-    const confirmUrl = `${window.location.origin}/auth/confirm?next=${encodeURIComponent(nextPath)}`;
+    const confirmUrl = buildAuthConfirmRedirectUrl(window.location.origin, nextPath);
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: {

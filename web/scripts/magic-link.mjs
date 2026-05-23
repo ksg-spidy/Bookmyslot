@@ -19,7 +19,7 @@ const key = env.SUPABASE_SERVICE_ROLE_KEY;
 const email = process.argv[2] || "udayan.gupta.ndis@gmail.com";
 const next = process.argv[3] || "/sessions";
 const origin = process.argv[4] || "http://localhost:3000";
-const redirectTo = `${origin}/auth/confirm?next=${encodeURIComponent(next)}`;
+const redirectTo = `${origin.replace(/\/+$/, "")}/auth/confirm?_sb=1&next=${encodeURIComponent(next)}`;
 
 const admin = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 

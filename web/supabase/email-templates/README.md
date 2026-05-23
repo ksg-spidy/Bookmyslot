@@ -25,7 +25,16 @@ In **Authentication** → **Providers** → **Email**, confirm **OTP expiry** ma
 
 ### Why `/auth/confirm`?
 
-Email providers often **prefetch** magic links, which consumes the one-time token (`otp_expired`). The template links to `/auth/confirm` first; the user clicks **Complete sign-in** to run verification. Ensure **Redirect URLs** include `/auth/confirm` and `/auth/callback` for your production host.
+Email providers often **prefetch** magic links, which consumes the one-time token (`otp_expired`). The template links to `/auth/confirm` first; the user clicks **Complete sign-in** to run verification.
+
+**Redirect URLs (required):** In **Authentication → URL configuration**, add (replace host with yours):
+
+- `https://bookbadmintonslot.netlify.app/auth/confirm**`
+- `https://bookbadmintonslot.netlify.app/auth/callback**`
+
+If these are missing, Supabase may fall back to **Site URL** only (`https://…netlify.app`), and the template would build an invalid link like `…netlify.app&token_hash=…` (browser “invalid URL” error). The template now falls back to `/auth/confirm?_sb=1`, but allow-listing the confirm URL is still required so `emailRedirectTo` from the app is honoured.
+
+**Site URL** should be `https://bookbadmintonslot.netlify.app` (no trailing path).
 
 ## Local Supabase CLI (optional)
 

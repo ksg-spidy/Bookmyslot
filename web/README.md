@@ -28,9 +28,10 @@ Next.js app with **Supabase** (Postgres + magic-link auth) and **Stripe Checkout
 - **Site URL:** `http://localhost:3000` (dev) and your production URL (e.g. `https://your-site.netlify.app`).
 - **Redirect URLs:** add (wildcards help, e.g. `https://your-site.netlify.app/**`)  
   `http://localhost:3000/auth/callback`  
-  `http://localhost:3000/auth/confirm`  
-  `https://your-site.netlify.app/auth/callback`  
-  `https://your-site.netlify.app/auth/confirm`
+  `http://localhost:3000/auth/confirm**`  
+  `https://your-site.netlify.app/auth/callback**`  
+  `https://your-site.netlify.app/auth/confirm**`  
+  Without `/auth/confirm**`, magic links may redirect to the site root only and produce invalid URLs (`…netlify.app&token_hash=…`).
 
 ## 2b. Magic-link email template (recommended)
 
