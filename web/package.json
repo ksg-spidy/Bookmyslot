@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "set-admin-password": "node scripts/set-admin-password.mjs"
+    "set-admin-password": "node scripts/set-admin-password.mjs",
+    "apply-supabase-auth": "node scripts/apply-supabase-auth-config.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
