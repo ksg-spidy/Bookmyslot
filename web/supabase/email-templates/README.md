@@ -19,9 +19,11 @@ In **Authentication** → **Providers** → **Email**, confirm **OTP expiry** ma
 | Variable | Purpose |
 |----------|---------|
 | `{{ .Email }}` | Who requested sign-in |
-| `{{ .ConfirmationURL }}` | One-time sign-in button and fallback URL |
-| `{{ .RedirectTo }}` | Confirm page URL from `signInWithOtp` (must be allow-listed); CTA appends `token_hash` + `type` |
-| `{{ .TokenHash }}` | Server-side verification via `/auth/callback` (avoids PKCE / prefetch issues) |
+| `{{ .SiteURL }}` | Production origin (fallback when `RedirectTo` is missing or equals site root) |
+| `{{ .RedirectTo }}` | Confirm page URL from `signInWithOtp` (must be allow-listed); CTA appends `&token_hash=` + `&type=magiclink` |
+| `{{ .TokenHash }}` | OTP hash; user verifies on `/auth/confirm` via **Complete sign-in** (POST), not on first GET |
+
+Do **not** use `{{ .ConfirmationURL }}` — it verifies on the first GET and causes `otp_expired` when email scanners prefetch the link.
 
 ### Why `/auth/confirm`?
 

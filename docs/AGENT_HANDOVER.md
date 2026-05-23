@@ -24,17 +24,13 @@ You are continuing ShuttleBook — a badminton session booking app in the "Badmi
 1. **Admin password** — `web/scripts/set-admin-password.mjs` + `npm run set-admin-password` (service role, no email; bypasses Supabase built-in SMTP rate limits).
 2. **Post-payment booking** — `fulfillBookingFromCheckoutSession` allows `locked` sessions; sync via `syncBookingAfterPayment` + Stripe webhook.
 3. **Magic link URL fix** — custom email template `web/supabase/email-templates/magic-link.html` appends `&token_hash=` only after `/auth/confirm?…` (fallback when `RedirectTo` is site root only).
-4. **Magic link prefetch fix (LOCAL, NOT YET COMMITTED)** — `web/src/app/auth/confirm/page.tsx` no longer renders `<a href="/auth/callback?token_hash=…">` (email scanners prefetched that and caused `otp_expired`). Verification moved to POST server action `web/src/app/actions/completeMagicLink.ts` + button "Complete sign-in". Token stripped from URL via `history.replaceState` after load.
+4. **Magic link prefetch fix (committed `16b71b4`, on `main`)** — `/auth/confirm` no longer exposes `/auth/callback?token_hash=…` in HTML. Verification via POST `completeMagicLinkSignIn` + **Complete sign-in**; token stripped from URL with `history.replaceState`.
 5. **Supabase apply script** — `web/scripts/apply-supabase-auth-config.mjs` + `npm run apply-supabase-auth` (needs `SUPABASE_ACCESS_TOKEN` in `.env.local` from https://supabase.com/dashboard/account/tokens).
 
-## UNCOMMITTED WORK (commit + deploy first)
-```
-M  web/src/app/auth/confirm/page.tsx
-M  web/supabase/email-templates/README.md
-?? web/src/app/actions/completeMagicLink.ts
-?? web/src/app/auth/confirm/layout.tsx
-```
-After commit: push `main` → Netlify auto-deploy. Re-paste `magic-link.html` in Supabase if template not applied via script.
+## PRODUCTION OPS (if magic link or booking still broken)
+- **Netlify:** `main` auto-deploys; confirm latest deploy after `16b71b4`.
+- **Supabase:** Re-paste `magic-link.html` + redirect URLs, or run `npm run apply-supabase-auth` with `SUPABASE_ACCESS_TOKEN`.
+- **Fresh magic link:** After template/redirect fixes, users must request a **new** link (old OTPs may already be consumed).
 
 ## KNOWN PRODUCTION ISSUES & FIXES
 
@@ -44,7 +40,7 @@ After commit: push `main` → Netlify auto-deploy. Re-paste `magic-link.html` in
 
 ### B. Magic link `otp_expired` / invalid URL
 - **Invalid URL** (`…netlify.app&token_hash=…`): Supabase **Redirect URLs** missing `/auth/confirm**` → `emailRedirectTo` ignored; update template from repo + add redirect URLs.
-- **otp_expired before user clicks:** (1) Dashboard still using default template with `{{ .ConfirmationURL }}` (verifies on GET). (2) Old confirm page exposed `/auth/callback?token_hash=` in HTML (fixed in uncommitted code). (3) Email scanner consumed link — user must request **new** link after fixes.
+- **otp_expired before user clicks:** (1) Dashboard still using default template with `{{ .ConfirmationURL }}` (verifies on GET). (2) Pre-`16b71b4` confirm page exposed `/auth/callback?token_hash=` in HTML (fixed in app). (3) Email scanner consumed link — user must request **new** link after fixes.
 - **Supabase checklist:**
   - Site URL: `https://bookbadmintonslot.netlify.app`
   - Redirect URLs: `https://bookbadmintonslot.netlify.app/auth/confirm**`, `…/auth/callback**`, `http://localhost:3000/auth/confirm**`, etc.
@@ -90,12 +86,12 @@ After commit: push `main` → Netlify auto-deploy. Re-paste `magic-link.html` in
 - Only commit when user asks.
 
 ## SUGGESTED NEXT STEPS (if user doesn’t specify)
-1. Commit + push uncommitted magic-link prefetch fix; verify on production with fresh magic link.
+1. Verify production magic link with a **fresh** email (post-`16b71b4` deploy + Supabase template/redirect URLs).
 2. Run `npm run apply-supabase-auth` (or manual Supabase dashboard) if magic links still broken.
 3. Verify Netlify `SUPABASE_SERVICE_ROLE_KEY` if bookings fail after payment.
 4. Continue WhatsApp product work per `docs/BUILD_WHATSAPP_KICKOFF.md` (confirm `002_whatsapp.sql` applied).
 
-Start by reading uncommitted `completeMagicLink.ts` + `auth/confirm/page.tsx`, then ask the user which issue to tackle or proceed with commit/deploy of the prefetch fix.
+Start by checking which production issue the user reports (magic link, booking save, admin, WhatsApp).
 ```
 
 ---
