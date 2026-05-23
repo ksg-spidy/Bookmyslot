@@ -1,5 +1,6 @@
 import { AdminSessionForm } from "@/app/admin/(protected)/AdminSessionForm";
 import { lockPlaySessionForm } from "@/app/actions/sessions";
+import { getBookingTimezoneLabel } from "@/lib/datetime";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 
@@ -61,11 +62,7 @@ export default async function AdminHomePage() {
 
       <section>
         <h2 className="text-lg font-medium text-white">New session</h2>
-        <p className="mt-1 text-xs text-[#8b949e]">
-          Times use <code className="text-[#58a6ff]">BOOKING_TZ_OFFSET</code> in{" "}
-          <code className="text-[#58a6ff]">.env.local</code> (default +10:00).
-        </p>
-        <AdminSessionForm />
+        <AdminSessionForm timezoneLabel={getBookingTimezoneLabel()} />
       </section>
     </div>
   );

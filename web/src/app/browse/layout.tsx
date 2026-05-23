@@ -1,20 +1,13 @@
 import { getProfile, getSessionUser } from "@/lib/auth";
 import { SiteHeader } from "@/components/SiteHeader";
-import { redirect } from "next/navigation";
 
-export default async function SessionsLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function BrowseLayout({ children }: { children: React.ReactNode }) {
   const user = await getSessionUser();
-  if (!user) redirect("/login");
-
-  const profile = await getProfile();
+  const profile = user ? await getProfile() : null;
 
   return (
     <div className="min-h-screen">
-      <SiteHeader signedIn isAdmin={profile?.role === "admin"} />
+      <SiteHeader signedIn={Boolean(user)} isAdmin={profile?.role === "admin"} />
       <main className="mx-auto max-w-2xl px-4 py-6">{children}</main>
     </div>
   );

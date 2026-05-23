@@ -1,9 +1,11 @@
 "use client";
 
 import { BookButton } from "@/app/sessions/[id]/BookButton";
+import { WithdrawButton } from "@/app/sessions/[id]/WithdrawButton";
 import { syncBookingAfterPayment } from "@/app/actions/syncBooking";
 import { getActiveBookingForUser } from "@/lib/bookings/queries";
 import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -18,12 +20,20 @@ export function YourBooking({
   booking,
   justPaid,
   stripeCheckoutSessionId,
+  profileComplete,
+  bookingFeeCents,
+  withdrawalFeeCents,
+  canWithdraw,
 }: {
   sessionId: string;
   open: boolean;
   booking: Booking | null;
   justPaid: boolean;
   stripeCheckoutSessionId?: string;
+  profileComplete: boolean;
+  bookingFeeCents: number;
+  withdrawalFeeCents: number;
+  canWithdraw: boolean;
 }) {
   const router = useRouter();
   const [localBooking, setLocalBooking] = useState<Booking | null>(booking);
@@ -100,12 +110,26 @@ export function YourBooking({
 
   if (active) {
     return (
-      <p className="mt-2 text-sm text-white">
-        Status: <strong className="capitalize">{active.status}</strong>
-        {active.status === "waitlist" && active.waitlist_position != null
-          ? ` (queue #${active.waitlist_position})`
-          : null}
-      </p>
+      <div className="mt-2">
+        <p className="text-sm text-white">
+          Status: <strong className="capitalize">{active.status}</strong>
+          {active.status === "waitlist" && active.waitlist_position != null
+            ? ` (queue #${active.waitlist_position})`
+            : null}
+        </p>
+        {active.status === "waitlist" ? (
+          <p className="mt-2 text-xs text-[#8b949e]">
+            You are on the waitlist. If someone cancels, the next person is moved to confirmed
+            automatically.
+          </p>
+        ) : null}
+        <WithdrawButton
+          sessionId={sessionId}
+          bookingFeeCents={bookingFeeCents}
+          withdrawalFeeCents={withdrawalFeeCents}
+          canWithdraw={canWithdraw}
+        />
+      </div>
     );
   }
 
@@ -167,6 +191,17 @@ export function YourBooking({
   }
 
   if (open) {
+    if (!profileComplete) {
+      return (
+        <p className="mt-3 text-sm text-[#8b949e]">
+          Complete your{" "}
+          <Link href="/sessions/settings" className="text-[#58a6ff] hover:underline">
+            profile
+          </Link>{" "}
+          to enable booking.
+        </p>
+      );
+    }
     return (
       <div className="mt-3">
         <BookButton sessionId={sessionId} />

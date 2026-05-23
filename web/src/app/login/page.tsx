@@ -81,9 +81,13 @@ function LoginInner() {
     <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">
       <h1 className="mb-2 text-2xl font-semibold text-white">ShuttleBook</h1>
       <p className="mb-6 text-sm text-[#8b949e]">
-        Player sign-in with a one-time email link. Admins use password at{" "}
+        Player sign-in with a one-time email link.{" "}
+        <Link href="/browse" className="text-[#58a6ff] hover:underline">
+          Browse sessions
+        </Link>{" "}
+        without signing in.{" "}
         <Link href="/admin/login" className="text-[#58a6ff] hover:underline">
-          /admin/login
+          Organiser admin sign-in
         </Link>
         .
       </p>

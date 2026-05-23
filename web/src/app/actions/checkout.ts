@@ -1,6 +1,8 @@
 "use server";
 
 import { getActiveBookingForUser } from "@/lib/bookings/queries";
+import { getProfile } from "@/lib/auth";
+import { isProfileComplete } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
 import Stripe from "stripe";
 
@@ -33,6 +35,13 @@ export async function startCheckout(playSessionId: string) {
 
   if (activeBooking) {
     return { error: "You already have an active booking for this session." };
+  }
+
+  const profile = await getProfile();
+  if (!isProfileComplete(profile)) {
+    return {
+      error: "Add your name and phone in Profile settings before booking.",
+    };
   }
 
   const secret = process.env.STRIPE_SECRET_KEY;

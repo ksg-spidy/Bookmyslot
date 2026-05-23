@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/auth";
 import { localDatetimeToIsoUtc } from "@/lib/datetime";
+import { audInputToCents } from "@/lib/money";
 import { revalidatePath } from "next/cache";
 
 async function requireAdmin() {
@@ -22,8 +23,10 @@ export async function createPlaySession(formData: FormData) {
   const endsAt = String(formData.get("ends_at") ?? "");
   const bookingClosesAt = String(formData.get("booking_closes_at") ?? "");
   const maxPlayers = parseInt(String(formData.get("max_players") ?? "16"), 10);
-  const bookingFeeCents = parseInt(String(formData.get("booking_fee_cents") ?? "1500"), 10);
-  const withdrawalFeeCents = parseInt(String(formData.get("withdrawal_fee_cents") ?? "200"), 10);
+  const bookingFeeCents =
+    audInputToCents(String(formData.get("booking_fee_aud") ?? "")) ?? 1500;
+  const withdrawalFeeCents =
+    audInputToCents(String(formData.get("withdrawal_fee_aud") ?? "")) ?? 200;
 
   if (maxPlayers < 13 || maxPlayers > 16) {
     return { error: "Max players must be between 13 and 16." };
@@ -54,6 +57,8 @@ export async function createPlaySession(formData: FormData) {
     return { error: error.message };
   }
   revalidatePath("/admin");
+  revalidatePath("/sessions");
+  revalidatePath("/browse");
   return { ok: true };
 }
 
@@ -72,7 +77,9 @@ export async function lockPlaySession(sessionId: string) {
   }
   revalidatePath("/admin");
   revalidatePath("/sessions");
+  revalidatePath("/browse");
   revalidatePath(`/sessions/${sessionId}`);
+  revalidatePath(`/browse/${sessionId}`);
   return { ok: true };
 }
 
