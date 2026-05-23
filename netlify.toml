@@ -1,5 +1,4 @@
-# Repo-root config — use when Netlify UI "Base directory" is empty (repo root).
-# If UI base is set to `web`, Netlify reads web/netlify.toml instead (same build settings).
+# Repo root — app lives in web/ (see web/netlify.toml for Next.js plugin settings).
 [build]
   base = "web"
   command = "npm run build"
@@ -7,7 +6,6 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  # Anon key is intentionally public; omit build artifacts from secret scan
   SECRETS_SCAN_OMIT_PATHS = ".netlify/**,.next/**"
-
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_ANON_KEY,NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SITE_URL"

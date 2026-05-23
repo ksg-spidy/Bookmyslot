@@ -7,6 +7,7 @@
   NODE_VERSION = "20"
   # Next.js server bundles reference env vars at build time — omit build cache/output from scan
   SECRETS_SCAN_OMIT_PATHS = ".netlify/**,.next/**"
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_ANON_KEY,NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SITE_URL"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
