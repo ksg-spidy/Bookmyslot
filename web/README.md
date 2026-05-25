@@ -108,9 +108,16 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). Admin: **Admin sign-in** → `/admin/login`. Players: magic link at `/login`. Create a session in admin, then book from **Player view** with another account (or incognito).
 
-## 6. Netlify
+## 6. WhatsApp booking (optional)
 
-- **Base directory:** `web` (if the repo root is `Badminton booking`).
+Players can book via WhatsApp (**BOOK**, **STATUS**, **ROSTER**, **WITHDRAW**, **LINK**).  
+Step-by-step Meta Developer + Cloud API setup: **[docs/WHATSAPP_SETUP.md](docs/WHATSAPP_SETUP.md)**.
+
+Webhook: `https://your-site.netlify.app/api/webhooks/whatsapp`
+
+## 7. Netlify
+
+- **Base directory:** `web` (repo root `netlify.toml` sets `base = "web"`).
 - Build: `npm run build` (already in `netlify.toml`).
 - Install `@netlify/plugin-nextjs` (listed in `package.json` devDependencies).
 - Add the same env vars in **Site configuration → Environment variables**.
@@ -120,12 +127,16 @@ Open [http://localhost:3000](http://localhost:3000). Admin: **Admin sign-in** �
 | Path | Role |
 |------|------|
 | `/` | Landing / redirect |
+| `/browse` | Public session list |
 | `/login` | Player magic link |
 | `/admin/login` | Admin email + password |
 | `/sessions` | Player sessions list |
 | `/sessions/[id]` | Book (Stripe) after sign-in |
+| `/sessions/bookings` | My bookings |
+| `/whatsapp/link` | Link WhatsApp number to web profile |
 | `/admin` | Admin dashboard |
 | `/admin/sessions/[id]` | Booking register |
+| `/api/webhooks/whatsapp` | Meta WhatsApp inbound |
 
 ## Legacy static demos
 

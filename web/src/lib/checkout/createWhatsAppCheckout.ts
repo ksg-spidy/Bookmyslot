@@ -66,8 +66,8 @@ export async function createWhatsAppCheckout(
           play_session_id: playSessionId,
           whatsapp_identity_id: whatsappIdentityId,
         },
-        success_url: `${site}/sessions/${playSessionId}?paid=1&from=wa`,
-        cancel_url: `${site}/sessions/${playSessionId}?canceled=1&from=wa`,
+        success_url: `${site}/api/whatsapp/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${site}/browse?canceled=1`,
       },
       { idempotencyKey: `checkout-wa-${whatsappIdentityId}-${playSessionId}` }
     );

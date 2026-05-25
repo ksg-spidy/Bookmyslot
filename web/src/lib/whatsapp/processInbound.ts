@@ -1,5 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/admin";
 import { createWhatsAppCheckout } from "@/lib/checkout/createWhatsAppCheckout";
+import { sendWhatsAppCtaUrl } from "@/lib/whatsapp/sendCtaUrl";
 import { sendWhatsAppInteractiveButtons } from "@/lib/whatsapp/sendInteractiveButtons";
 import { sendWhatsAppText } from "@/lib/whatsapp/sendText";
 import { buildRosterMessage, withdrawWhatsappBooking } from "@/lib/whatsapp/waBookingOps";
@@ -136,7 +137,18 @@ export async function processInboundWhatsAppMessage(
       await sendWhatsAppText(waId, `Could not start checkout: ${res.error}`);
       return;
     }
-    await sendWhatsAppText(waId, `Open this link to pay and confirm your spot:\n${res.url}`);
+    const cta = await sendWhatsAppCtaUrl(
+      waId,
+      "Tap the button below to pay securely and confirm your spot.",
+      "Pay to book",
+      res.url
+    );
+    if (!cta.ok) {
+      await sendWhatsAppText(
+        waId,
+        "Pay to book (open this link in your browser):\n" + res.url
+      );
+    }
     return;
   }
 

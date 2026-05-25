@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { sendWhatsAppText } from "@/lib/whatsapp/sendText";
+import { notifyWhatsAppBookingConfirmation } from "@/lib/whatsapp/notifyBookingConfirmation";
 import type Stripe from "stripe";
 
 type AdminClient = SupabaseClient;
@@ -34,7 +34,7 @@ export async function fulfillBookingFromCheckoutSession(
 
   const { data: playSession, error: pErr } = await admin
     .from("play_sessions")
-    .select("id, max_players, status, title, venue, starts_at")
+    .select("id, max_players, status, title, venue, starts_at, ends_at")
     .eq("id", playSessionId)
     .single();
 
@@ -58,6 +58,19 @@ export async function fulfillBookingFromCheckoutSession(
     .maybeSingle();
 
   if (existing) {
+    if (whatsappIdentityId && (existing.status === "confirmed" || existing.status === "waitlist")) {
+      await notifyWhatsAppBookingConfirmation({
+        admin,
+        whatsappIdentityId,
+        playSession: playSession as {
+          title: string;
+          venue: string;
+          starts_at: string;
+          ends_at: string;
+        },
+        status: existing.status as "confirmed" | "waitlist",
+      });
+    }
     return { ok: true };
   }
 
@@ -200,25 +213,17 @@ export async function fulfillBookingFromCheckoutSession(
   }
 
   if (whatsappIdentityId) {
-    const { data: wid } = await admin
-      .from("whatsapp_identities")
-      .select("wa_id")
-      .eq("id", whatsappIdentityId)
-      .maybeSingle();
-    const to = wid?.wa_id as string | undefined;
-    if (to) {
-      const title = (playSession.title as string) ?? "Session";
-      const venue = (playSession.venue as string) ?? "";
-      const starts = playSession.starts_at as string;
-      const body =
-        status === "confirmed"
-          ? `ShuttleBook: you are confirmed for ${title}.\n${venue}\nStarts: ${starts}\nPayment received — see you on court.`
-          : `ShuttleBook: you are on the waitlist for ${title} (${venue}).\nStarts: ${starts}\nPayment received — we will notify you if a spot opens.`;
-      const sent = await sendWhatsAppText(to, body);
-      if (!sent.ok) {
-        console.error("WhatsApp confirmation failed", sent.error);
-      }
-    }
+    await notifyWhatsAppBookingConfirmation({
+      admin,
+      whatsappIdentityId,
+      playSession: playSession as {
+        title: string;
+        venue: string;
+        starts_at: string;
+        ends_at: string;
+      },
+      status,
+    });
   }
 
   return { ok: true };
