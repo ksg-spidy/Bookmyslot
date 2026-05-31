@@ -1,5 +1,8 @@
 import { fulfillBookingFromCheckoutSession } from "@/lib/checkout/fulfillBooking";
 import { createServiceClient } from "@/lib/supabase/admin";
+import { formatSessionRange } from "@/lib/datetime";
+import { humanizeFulfillReason } from "@/lib/whatsapp/sessionCommands";
+import { renderPaymentSuccessHtml } from "@/lib/whatsapp/paymentSuccessHtml";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
@@ -33,30 +36,89 @@ export async function GET(request: Request) {
     return htmlResponse("Payment not completed yet. Return to WhatsApp and try again in a moment.", false);
   }
 
+  const playSessionId = checkout.metadata?.play_session_id?.trim();
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "";
+
   try {
     const admin = createServiceClient();
     const result = await fulfillBookingFromCheckoutSession(admin, checkout);
     if (!result.ok) {
       console.error("payment-success fulfill", sessionId, result.reason);
       return htmlResponse(
-        `Payment received but booking could not be saved (${result.reason}). Contact the organiser with your receipt.`,
+        `Payment received but booking could not be saved. ${humanizeFulfillReason(result.reason)}`,
         false
       );
     }
+
+    let title: string | undefined;
+    let venue: string | undefined;
+    let when: string | undefined;
+    let status: "confirmed" | "waitlist" | undefined;
+    let waitlistPosition: number | null | undefined;
+
+    if (playSessionId) {
+      const { data: ps } = await admin
+        .from("play_sessions")
+        .select("title, venue, starts_at, ends_at")
+        .eq("id", playSessionId)
+        .maybeSingle();
+      if (ps) {
+        title = ps.title as string;
+        venue = ps.venue as string;
+        when = formatSessionRange(ps.starts_at as string, ps.ends_at as string);
+      }
+
+      const waIdentityId = checkout.metadata?.whatsapp_identity_id?.trim();
+      if (waIdentityId) {
+        const { data: booking } = await admin
+          .from("bookings")
+          .select("status, waitlist_position")
+          .eq("stripe_checkout_session_id", sessionId)
+          .maybeSingle();
+        if (booking?.status === "confirmed" || booking?.status === "waitlist") {
+          status = booking.status;
+          waitlistPosition = booking.waitlist_position as number | null;
+        }
+      }
+    }
+
+    const calendarUrl =
+      playSessionId && siteUrl ? `${siteUrl}/api/calendar/session/${playSessionId}` : undefined;
+
+    return htmlResponse("Payment successful.", true, {
+      title,
+      venue,
+      when,
+      status,
+      waitlistPosition,
+      calendarUrl,
+    });
   } catch (e) {
     console.error("payment-success error", e);
-    return htmlResponse("Payment received but something went wrong. Check WhatsApp for confirmation.", false);
+    return htmlResponse(
+      "Payment received. Check WhatsApp for your booking confirmation — you can close this page.",
+      true
+    );
   }
-
-  return htmlResponse(
-    "Payment successful. Check WhatsApp for your booking confirmation — you can close this page.",
-    true
-  );
 }
 
-function htmlResponse(message: string, ok: boolean) {
-  const color = ok ? "#3fb950" : "#f85149";
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width"/><title>ShuttleBook</title></head><body style="font-family:system-ui;background:#0d1117;color:#e6edf3;padding:2rem;max-width:28rem;margin:auto"><p style="color:${color}">${message}</p></body></html>`;
+function htmlResponse(
+  message: string,
+  ok: boolean,
+  details?: {
+    title?: string;
+    venue?: string;
+    when?: string;
+    status?: "confirmed" | "waitlist";
+    waitlistPosition?: number | null;
+    calendarUrl?: string;
+  }
+) {
+  const html = renderPaymentSuccessHtml({
+    ok,
+    message,
+    ...details,
+  });
   return new NextResponse(html, {
     status: ok ? 200 : 500,
     headers: { "Content-Type": "text/html; charset=utf-8" },

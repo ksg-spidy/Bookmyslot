@@ -1,6 +1,7 @@
 import type { SessionBookingCounts } from "@/lib/bookings/counts";
 import { formatSessionDateTime, formatSessionRange, getBookingTimezoneLabel } from "@/lib/datetime";
 import { formatAud } from "@/lib/money";
+import Link from "next/link";
 
 type Session = {
   title: string;
@@ -63,8 +64,12 @@ export function SessionDetailBody({
       </p>
       <p className="mt-1 text-sm text-[#8b949e]">
         Booking closes {formatSessionDateTime(session.booking_closes_at)} ({getBookingTimezoneLabel()}
-        ). If the session is full, you join the waitlist and pay the same fee; you are charged only when
-        you book.
+        ). If the session is full, you join the waitlist and pay the same booking fee now. If someone
+        withdraws, the next person in line is confirmed automatically.{" "}
+        <Link href="/refund" className="text-[#58a6ff] hover:underline">
+          Refund policy
+        </Link>
+        .
       </p>
     </>
   );

@@ -1,12 +1,12 @@
 import { SiteFooter } from "@/components/SiteFooter";
+import { getPublicSiteUrl } from "@/lib/env";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://bookbadmintonslot.netlify.app";
+const siteUrl = getPublicSiteUrl();
 
 export const metadata: Metadata = {
   title: {

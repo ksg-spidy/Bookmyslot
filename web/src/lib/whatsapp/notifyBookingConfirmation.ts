@@ -1,10 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  buildWhatsAppBookingConfirmationBody,
+  PROMOTION_CONFIRMED_MESSAGE,
+} from "@/lib/copy/bookingCopy";
 import { formatSessionRange } from "@/lib/datetime";
 import { sendWhatsAppText } from "@/lib/whatsapp/sendText";
 
 export async function notifyWhatsAppBookingConfirmation(opts: {
   admin: SupabaseClient;
   whatsappIdentityId: string;
+  playSessionId: string;
   playSession: {
     title: string;
     venue: string;
@@ -12,8 +17,10 @@ export async function notifyWhatsAppBookingConfirmation(opts: {
     ends_at: string;
   };
   status: "confirmed" | "waitlist";
+  waitlistPosition: number | null;
 }): Promise<void> {
-  const { admin, whatsappIdentityId, playSession, status } = opts;
+  const { admin, whatsappIdentityId, playSessionId, playSession, status, waitlistPosition } =
+    opts;
 
   const { data: wid } = await admin
     .from("whatsapp_identities")
@@ -27,17 +34,21 @@ export async function notifyWhatsAppBookingConfirmation(opts: {
     return;
   }
 
-  const title = playSession.title ?? "Session";
-  const venue = playSession.venue ?? "";
-  const when = formatSessionRange(playSession.starts_at, playSession.ends_at);
-
-  const body =
-    status === "confirmed"
-      ? `ShuttleBook: you are confirmed for ${title}.\n${venue}\n${when}\nPayment received — see you on court.`
-      : `ShuttleBook: you are on the waitlist for ${title} (${venue}).\n${when}\nPayment received — we will notify you if a spot opens.`;
+  const body = buildWhatsAppBookingConfirmationBody({
+    title: playSession.title ?? "Session",
+    venue: playSession.venue ?? "",
+    when: formatSessionRange(playSession.starts_at, playSession.ends_at),
+    status,
+    waitlistPosition,
+    playSessionId,
+  });
 
   const sent = await sendWhatsAppText(to, body);
   if (!sent.ok) {
     console.error("WhatsApp confirmation failed", sent.error);
   }
+}
+
+export async function notifyWhatsAppWaitlistPromoted(waId: string): Promise<void> {
+  await sendWhatsAppText(waId, `ShuttleBook: ${PROMOTION_CONFIRMED_MESSAGE}`);
 }

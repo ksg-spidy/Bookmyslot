@@ -4,6 +4,12 @@ import { BookButton } from "@/app/sessions/[id]/BookButton";
 import { WithdrawButton } from "@/app/sessions/[id]/WithdrawButton";
 import { syncBookingAfterPayment } from "@/app/actions/syncBooking";
 import { getActiveBookingForUser } from "@/lib/bookings/queries";
+import {
+  formatWaitlistPosition,
+  paymentSuccessStatusLabel,
+  WAITLIST_AFTER_BOOK_MESSAGE,
+} from "@/lib/copy/bookingCopy";
+import { humanizeSyncError } from "@/lib/bookings/syncErrorMessages";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -24,6 +30,8 @@ export function YourBooking({
   bookingFeeCents,
   withdrawalFeeCents,
   canWithdraw,
+  spotsRemaining,
+  waitlistCount,
 }: {
   sessionId: string;
   open: boolean;
@@ -34,6 +42,8 @@ export function YourBooking({
   bookingFeeCents: number;
   withdrawalFeeCents: number;
   canWithdraw: boolean;
+  spotsRemaining: number;
+  waitlistCount: number;
 }) {
   const router = useRouter();
   const [localBooking, setLocalBooking] = useState<Booking | null>(booking);
@@ -45,8 +55,11 @@ export function YourBooking({
     if (booking) {
       setConfirming(false);
       setSyncError(null);
+      if (justPaid) {
+        router.replace(`/sessions/${sessionId}`, { scroll: false });
+      }
     }
-  }, [booking]);
+  }, [booking, justPaid, router, sessionId]);
 
   useEffect(() => {
     if (!justPaid || localBooking) {
@@ -66,7 +79,7 @@ export function YourBooking({
         return;
       }
       if (res.error) {
-        setSyncError(res.error);
+        setSyncError(humanizeSyncError(res.error));
       }
     }
 
@@ -111,17 +124,25 @@ export function YourBooking({
   if (active) {
     return (
       <div className="mt-2">
+        {justPaid ? (
+          <p
+            className="mb-2 rounded-lg border border-[#238636] bg-[#0c2218] p-3 text-sm text-[#3fb950]"
+            role="status"
+          >
+            Payment received — you are{" "}
+            <strong>{paymentSuccessStatusLabel(active.status, active.waitlist_position)}</strong>.
+          </p>
+        ) : null}
         <p className="text-sm text-white">
-          Status: <strong className="capitalize">{active.status}</strong>
-          {active.status === "waitlist" && active.waitlist_position != null
-            ? ` (queue #${active.waitlist_position})`
-            : null}
+          Status:{" "}
+          <strong className="capitalize">
+            {active.status === "waitlist"
+              ? formatWaitlistPosition(active.waitlist_position) ?? "Waitlisted"
+              : active.status}
+          </strong>
         </p>
         {active.status === "waitlist" ? (
-          <p className="mt-2 text-xs text-[#8b949e]">
-            You are on the waitlist. If someone cancels, the next person is moved to confirmed
-            automatically.
-          </p>
+          <p className="mt-2 text-xs text-[#8b949e]">{WAITLIST_AFTER_BOOK_MESSAGE}</p>
         ) : null}
         <WithdrawButton
           sessionId={sessionId}
@@ -135,15 +156,13 @@ export function YourBooking({
 
   if (confirming) {
     return (
-      <div className="mt-3 space-y-2 text-sm">
-        <p className="text-[#8b949e]">
-          Confirming your booking… this usually takes a few seconds.
+      <div className="mt-3 space-y-2 text-sm" role="status" aria-live="polite">
+        <p className="rounded-lg border border-[#238636] bg-[#0c2218] p-3 text-[#3fb950]">
+          Payment received — saving your booking now. This usually takes a few seconds.
         </p>
         {syncError ? (
           <>
-            <p className="text-red-400">
-              Could not save yet ({syncError}). Retrying… or use the button below.
-            </p>
+            <p className="text-red-400">{syncError}</p>
             <button
               type="button"
               className="text-[#58a6ff] hover:underline"
@@ -153,7 +172,7 @@ export function YourBooking({
                     setSyncError(null);
                     router.refresh();
                   } else if (res.error) {
-                    setSyncError(res.error);
+                    setSyncError(humanizeSyncError(res.error));
                   }
                 });
               }}
@@ -168,10 +187,9 @@ export function YourBooking({
 
   if (justPaid && syncError) {
     return (
-      <div className="mt-3 space-y-2 text-sm">
+      <div className="mt-3 space-y-2 text-sm" role="alert">
         <p className="text-red-400">
-          Payment was received but the booking could not be saved ({syncError}). Try refresh, or
-          contact the organiser with your payment confirmation.
+          Payment was received but the booking could not be saved. {syncError}
         </p>
         <button
           type="button"
@@ -204,7 +222,12 @@ export function YourBooking({
     }
     return (
       <div className="mt-3">
-        <BookButton sessionId={sessionId} />
+        <BookButton
+          sessionId={sessionId}
+          spotsRemaining={spotsRemaining}
+          bookingFeeCents={bookingFeeCents}
+          waitlistCount={waitlistCount}
+        />
       </div>
     );
   }

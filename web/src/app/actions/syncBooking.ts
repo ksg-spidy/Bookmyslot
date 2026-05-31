@@ -48,8 +48,7 @@ export async function syncBookingAfterPayment(
       const retrieved = await stripe.checkout.sessions.retrieve(checkoutId, {
         expand: ["payment_intent"],
       });
-      const paid =
-        retrieved.payment_status === "paid" || retrieved.status === "complete";
+      const paid = retrieved.payment_status === "paid";
       const sessionMatch = retrieved.metadata?.play_session_id === playSessionId;
       const userMatch = retrieved.metadata?.user_id === user.id;
 

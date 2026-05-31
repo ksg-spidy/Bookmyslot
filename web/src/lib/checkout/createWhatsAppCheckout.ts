@@ -1,4 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/admin";
+import { getPublicSiteUrl, requireServerEnv } from "@/lib/env";
+import { randomUUID } from "crypto";
 import Stripe from "stripe";
 
 export type WaCheckoutResult = { url: string } | { error: string };
@@ -8,9 +10,12 @@ export async function createWhatsAppCheckout(
   whatsappIdentityId: string
 ): Promise<WaCheckoutResult> {
   const admin = createServiceClient();
-  const secret = process.env.STRIPE_SECRET_KEY;
-  const site = process.env.NEXT_PUBLIC_SITE_URL;
-  if (!secret || !site) {
+  let secret: string;
+  let site: string;
+  try {
+    secret = requireServerEnv("STRIPE_SECRET_KEY");
+    site = getPublicSiteUrl();
+  } catch {
     return { error: "Server missing Stripe or site URL configuration." };
   }
 
@@ -69,7 +74,7 @@ export async function createWhatsAppCheckout(
         success_url: `${site}/api/whatsapp/payment-success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${site}/browse?canceled=1`,
       },
-      { idempotencyKey: `checkout-wa-${whatsappIdentityId}-${playSessionId}` }
+      { idempotencyKey: `checkout-wa-${randomUUID()}` }
     );
 
     if (!checkout.url) {

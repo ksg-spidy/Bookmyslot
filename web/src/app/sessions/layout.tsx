@@ -1,6 +1,5 @@
 import { getProfile, getSessionUser } from "@/lib/auth";
 import { SiteHeader } from "@/components/SiteHeader";
-import { redirect } from "next/navigation";
 
 export default async function SessionsLayout({
   children,
@@ -8,9 +7,7 @@ export default async function SessionsLayout({
   children: React.ReactNode;
 }) {
   const user = await getSessionUser();
-  if (!user) redirect("/login");
-
-  const profile = await getProfile();
+  const profile = user ? await getProfile() : null;
 
   return (
     <div className="min-h-screen">

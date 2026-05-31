@@ -1,8 +1,24 @@
 import { createServiceClient } from "@/lib/supabase/admin";
+import { getSessionBookingCounts } from "@/lib/bookings/counts";
 import { createWhatsAppCheckout } from "@/lib/checkout/createWhatsAppCheckout";
+import {
+  getWhatsAppBookIntro,
+  getWhatsAppPayButtonLabel,
+} from "@/lib/copy/bookingCopy";
 import { sendWhatsAppCtaUrl } from "@/lib/whatsapp/sendCtaUrl";
 import { sendWhatsAppInteractiveButtons } from "@/lib/whatsapp/sendInteractiveButtons";
 import { sendWhatsAppText } from "@/lib/whatsapp/sendText";
+import {
+  buildMyBookingsMessage,
+  buildOpenSessionsListMessage,
+  buildStatusMessage,
+  fetchOpenSessionsForWa,
+  isMyBookingsCommand,
+  listWaBookedSessions,
+  openSessionListIndex,
+  parseCommand,
+  resolveOpenSessionByIndex,
+} from "@/lib/whatsapp/sessionCommands";
 import { buildRosterMessage, withdrawWhatsappBooking } from "@/lib/whatsapp/waBookingOps";
 import { randomBytes } from "crypto";
 import Stripe from "stripe";
@@ -33,43 +49,40 @@ function commandFromMessage(msg: WhatsAppInboundMessage): string | null {
   return null;
 }
 
-async function resolveDefaultPlaySessionId(admin: ReturnType<typeof createServiceClient>): Promise<string | null> {
-  const envId = process.env.WHATSAPP_DEFAULT_PLAY_SESSION_ID?.trim();
-  if (envId) {
-    const { data } = await admin
-      .from("play_sessions")
-      .select("id")
-      .eq("id", envId)
-      .eq("status", "open")
-      .maybeSingle();
-    if (data?.id) return data.id;
-  }
-  const nowIso = new Date().toISOString();
-  const { data } = await admin
-    .from("play_sessions")
-    .select("id")
-    .eq("status", "open")
-    .gte("booking_closes_at", nowIso)
-    .order("starts_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  return data?.id ?? null;
-}
-
 async function sendHelp(waId: string): Promise<void> {
   const body =
     "ShuttleBook — tap a button or reply with text.\n\n" +
-    "Text: BOOK, STATUS, ROSTER, WITHDRAW, LINK, HELP";
+    "Text: LIST, BOOK, MY, STATUS, ROSTER, WITHDRAW, LINK, HELP\n" +
+    "(Multiple sessions? Reply LIST, then BOOK 1, STATUS 2, etc.)";
   const r = await sendWhatsAppInteractiveButtons(waId, body, [
+    { id: "LIST", title: "Open sessions" },
     { id: "BOOK", title: "Book a spot" },
-    { id: "ROSTER", title: "Who's coming?" },
-    { id: "STATUS", title: "Session info" },
+    { id: "MY", title: "My bookings" },
   ]);
   if (!r.ok) {
     await sendWhatsAppText(
       waId,
-      "ShuttleBook\n\nCommands:\n• BOOK — pay & book\n• ROSTER — who's coming\n• STATUS — session details\n• WITHDRAW — cancel & partial refund\n• LINK — connect this number to your web login\n• HELP — this menu"
+      "ShuttleBook\n\nCommands:\n• LIST — open sessions\n• BOOK — pay & book (or BOOK 2)\n• MY — your bookings\n• ROSTER — who's coming\n• STATUS — session details\n• WITHDRAW — withdraw & partial refund\n• LINK — connect to web login\n• HELP — this menu"
     );
+  }
+}
+
+async function sendBookCheckout(
+  waId: string,
+  playSessionId: string,
+  identityId: string,
+  opts: { full: boolean; bookingFeeCents: number; waitlistCount: number }
+): Promise<void> {
+  const res = await createWhatsAppCheckout(playSessionId, identityId);
+  if ("error" in res) {
+    await sendWhatsAppText(waId, `Could not start checkout: ${res.error}`);
+    return;
+  }
+  const intro = getWhatsAppBookIntro(opts);
+  const buttonLabel = getWhatsAppPayButtonLabel(opts.full, opts.bookingFeeCents);
+  const cta = await sendWhatsAppCtaUrl(waId, intro, buttonLabel, res.url);
+  if (!cta.ok) {
+    await sendWhatsAppText(waId, `${intro}\n\n${res.url}`);
   }
 }
 
@@ -109,88 +122,120 @@ export async function processInboundWhatsAppMessage(
 
   if (idErr || !identity?.id) {
     console.error("whatsapp identity upsert failed", idErr);
+    await sendWhatsAppText(waId, "Something went wrong. Reply HELP to try again.");
     return;
   }
 
   const identityId = identity.id as string;
 
-  const cmd = commandFromMessage(msg);
+  const rawCmd = commandFromMessage(msg);
 
-  if (!cmd && msg.type !== "text") {
+  if (!rawCmd && msg.type !== "text") {
     await sendWhatsAppText(waId, "ShuttleBook: please send a text message or use the menu buttons. Reply HELP.");
     return;
   }
+
+  const { base: cmd, index, withdrawSessionId } = rawCmd
+    ? parseCommand(rawCmd)
+    : { base: "", index: null, withdrawSessionId: null };
 
   if (cmd === "HELP" || cmd === "HI" || cmd === "HELLO" || !cmd) {
     await sendHelp(waId);
     return;
   }
 
+  if (cmd === "LIST" || cmd === "SESSIONS") {
+    await sendWhatsAppText(waId, await buildOpenSessionsListMessage(admin));
+    return;
+  }
+
+  if (cmd === "MY" || isMyBookingsCommand(rawCmd ?? "")) {
+    await sendWhatsAppText(waId, await buildMyBookingsMessage(admin, identityId));
+    return;
+  }
+
   if (cmd === "BOOK") {
-    const playSessionId = await resolveDefaultPlaySessionId(admin);
-    if (!playSessionId) {
+    const resolved = await resolveOpenSessionByIndex(admin, index);
+    if ("none" in resolved) {
       await sendWhatsAppText(waId, "No open session is available to book right now. Try again later.");
       return;
     }
-    const res = await createWhatsAppCheckout(playSessionId, identityId);
-    if ("error" in res) {
-      await sendWhatsAppText(waId, `Could not start checkout: ${res.error}`);
+    if ("needPick" in resolved) {
+      await sendWhatsAppText(waId, await buildOpenSessionsListMessage(admin));
       return;
     }
-    const cta = await sendWhatsAppCtaUrl(
-      waId,
-      "Tap the button below to pay securely and confirm your spot.",
-      "Pay to book",
-      res.url
+    const counts = await getSessionBookingCounts(
+      admin,
+      resolved.session.id,
+      resolved.session.max_players
     );
-    if (!cta.ok) {
-      await sendWhatsAppText(
-        waId,
-        "Pay to book (open this link in your browser):\n" + res.url
-      );
-    }
+    await sendBookCheckout(waId, resolved.session.id, identityId, {
+      full: counts.spotsRemaining <= 0,
+      bookingFeeCents: resolved.session.booking_fee_cents,
+      waitlistCount: counts.waitlist,
+    });
     return;
   }
 
   if (cmd === "STATUS") {
-    const playSessionId = await resolveDefaultPlaySessionId(admin);
-    if (!playSessionId) {
-      await sendWhatsAppText(waId, "No default open session.");
+    const resolved = await resolveOpenSessionByIndex(admin, index);
+    if ("none" in resolved) {
+      await sendWhatsAppText(waId, "No open sessions right now.");
       return;
     }
-    const { data: s } = await admin
-      .from("play_sessions")
-      .select("title, venue, booking_closes_at, starts_at, ends_at")
-      .eq("id", playSessionId)
-      .single();
-    if (!s) {
-      await sendWhatsAppText(waId, "Session not found.");
+    if ("needPick" in resolved) {
+      await sendWhatsAppText(waId, await buildOpenSessionsListMessage(admin));
       return;
     }
+    const openSessions = await fetchOpenSessionsForWa(admin);
+    const listIndex = openSessionListIndex(openSessions, resolved.session.id);
     await sendWhatsAppText(
       waId,
-      `${s.title}\n${s.venue}\nStarts: ${s.starts_at}\nBooking closes: ${s.booking_closes_at}\n\nReply BOOK to get a payment link.`
+      await buildStatusMessage(admin, resolved.session, listIndex)
     );
     return;
   }
 
   if (cmd === "ROSTER" || cmd === "WHO" || cmd === "WHOSCOMING") {
-    const playSessionId = await resolveDefaultPlaySessionId(admin);
-    if (!playSessionId) {
-      await sendWhatsAppText(waId, "No default open session.");
+    const resolved = await resolveOpenSessionByIndex(admin, index);
+    if ("none" in resolved) {
+      await sendWhatsAppText(waId, "No open sessions right now.");
       return;
     }
-    const text = await buildRosterMessage(admin, playSessionId, identityId);
+    if ("needPick" in resolved) {
+      await sendWhatsAppText(waId, await buildOpenSessionsListMessage(admin));
+      return;
+    }
+    const text = await buildRosterMessage(admin, resolved.session.id, identityId);
     await sendWhatsAppText(waId, text ?? "Could not build roster.");
     return;
   }
 
   if (cmd === "WITHDRAW") {
-    const playSessionId = await resolveDefaultPlaySessionId(admin);
-    if (!playSessionId) {
-      await sendWhatsAppText(waId, "No default open session.");
+    const booked = await listWaBookedSessions(admin, identityId);
+    if ("none" in booked) {
+      await sendWhatsAppText(waId, "You have no active booking to withdraw.");
       return;
     }
+
+    let playSessionId: string | null = null;
+    if (booked.sessions.length === 1) {
+      playSessionId = booked.sessions[0]!.playSessionId;
+    } else if (index != null) {
+      playSessionId = booked.sessions[index - 1]?.playSessionId ?? null;
+    }
+
+    if (!playSessionId) {
+      const lines = booked.sessions
+        .map((s) => `${s.index}. ${s.title}`)
+        .join("\n");
+      await sendWhatsAppText(
+        waId,
+        `Which booking?\n\n${lines}\n\nReply WITHDRAW 1 (or the session number) to cancel.`
+      );
+      return;
+    }
+
     const { data: session } = await admin
       .from("play_sessions")
       .select("booking_fee_cents, withdrawal_fee_cents")
@@ -203,15 +248,16 @@ export async function processInboundWhatsAppMessage(
     const fee = (session.booking_fee_cents as number) / 100;
     const keep = (session.withdrawal_fee_cents as number) / 100;
     const back = fee - keep;
-    const intro = `Withdraw from this session?\nA $${keep.toFixed(2)} fee applies; about $${back.toFixed(2)} would be refunded to your card.`;
+    const intro = `Withdraw from this session?\nA $${keep.toFixed(2)} withdrawal fee applies; about $${back.toFixed(2)} would be refunded to your card.`;
+    const yesId = `WITHDRAW_YES:${playSessionId}`;
     const r = await sendWhatsAppInteractiveButtons(waId, intro, [
-      { id: "WITHDRAW_YES", title: "Yes, withdraw" },
+      { id: yesId, title: "Yes, withdraw" },
       { id: "WITHDRAW_NO", title: "Keep my spot" },
     ]);
     if (!r.ok) {
       await sendWhatsAppText(
         waId,
-        `${intro}\n\nReply WITHDRAW_YES or WITHDRAW_NO (or tap buttons if your client supports them).`
+        `${intro}\n\nReply ${yesId} or WITHDRAW_NO.`
       );
     }
     return;
@@ -223,11 +269,25 @@ export async function processInboundWhatsAppMessage(
   }
 
   if (cmd === "WITHDRAW_YES") {
-    const playSessionId = await resolveDefaultPlaySessionId(admin);
-    if (!playSessionId) {
-      await sendWhatsAppText(waId, "No default open session.");
+    let sessionId: string | null = withdrawSessionId;
+    if (!sessionId) {
+      const booked = await listWaBookedSessions(admin, identityId);
+      if ("none" in booked) {
+        await sendWhatsAppText(waId, "No active booking found.");
+        return;
+      }
+      if (index != null) {
+        sessionId = booked.sessions[index - 1]?.playSessionId ?? null;
+      } else if (booked.sessions.length === 1) {
+        sessionId = booked.sessions[0]!.playSessionId;
+      }
+    }
+
+    if (!sessionId) {
+      await sendWhatsAppText(waId, "Could not find which session to withdraw. Reply WITHDRAW and pick a session.");
       return;
     }
+
     const secret = process.env.STRIPE_SECRET_KEY;
     if (!secret) {
       await sendWhatsAppText(waId, "Payments are not configured.");
@@ -237,7 +297,7 @@ export async function processInboundWhatsAppMessage(
     const result = await withdrawWhatsappBooking({
       admin,
       stripe,
-      playSessionId,
+      playSessionId: sessionId,
       whatsappIdentityId: identityId,
       waId,
     });
@@ -274,5 +334,5 @@ export async function processInboundWhatsAppMessage(
     return;
   }
 
-  await sendWhatsAppText(waId, "Unknown command. Reply HELP for the menu.");
+  await sendWhatsAppText(waId, "Unknown command. Reply HELP or LIST for the menu.");
 }

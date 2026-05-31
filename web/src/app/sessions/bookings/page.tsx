@@ -1,5 +1,8 @@
+import { WithdrawButton } from "@/app/sessions/[id]/WithdrawButton";
 import { AddToCalendarLink } from "@/components/AddToCalendarLink";
+import { PromotionBanner } from "@/components/PromotionBanner";
 import { ACTIVE_BOOKING_STATUSES } from "@/lib/bookings/queries";
+import { formatWaitlistPosition } from "@/lib/copy/bookingCopy";
 import { formatSessionDateTime, formatSessionRange } from "@/lib/datetime";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
@@ -15,12 +18,16 @@ type SessionInfo = {
   starts_at: string;
   ends_at: string;
   booking_closes_at: string;
+  status: string;
+  booking_fee_cents: number;
+  withdrawal_fee_cents: number;
 };
 
 type BookingRow = {
   id: string;
   status: string;
   waitlist_position: number | null;
+  promoted_at: string | null;
   created_at: string;
   play_sessions: SessionInfo | null;
 };
@@ -41,6 +48,9 @@ function normalizeBookingRows(raw: unknown): BookingRow[] {
           starts_at: String(s.starts_at ?? ""),
           ends_at: String(s.ends_at ?? ""),
           booking_closes_at: String(s.booking_closes_at ?? ""),
+          status: String(s.status ?? "open"),
+          booking_fee_cents: Number(s.booking_fee_cents ?? 0),
+          withdrawal_fee_cents: Number(s.withdrawal_fee_cents ?? 0),
         };
       }
     }
@@ -48,10 +58,23 @@ function normalizeBookingRows(raw: unknown): BookingRow[] {
       id: String(r.id),
       status: String(r.status),
       waitlist_position: (r.waitlist_position as number | null) ?? null,
+      promoted_at: (r.promoted_at as string | null) ?? null,
       created_at: String(r.created_at),
       play_sessions: session,
     };
   });
+}
+
+function canWithdrawBooking(b: BookingRow, nowIso: string): boolean {
+  const s = b.play_sessions;
+  if (!s) return false;
+  const open = s.status === "open" && s.booking_closes_at > nowIso;
+  const sessionStarted = s.starts_at <= nowIso;
+  return (
+    open &&
+    !sessionStarted &&
+    (b.status === "confirmed" || b.status === "waitlist")
+  );
 }
 
 export default async function MyBookingsPage() {
@@ -63,20 +86,19 @@ export default async function MyBookingsPage() {
 
   const now = new Date().toISOString();
 
+  const sessionSelect =
+    "id, title, venue, starts_at, ends_at, booking_closes_at, status, booking_fee_cents, withdrawal_fee_cents";
+
   const { data: active, error: activeErr } = await supabase
     .from("bookings")
-    .select(
-      "id, status, waitlist_position, created_at, play_sessions ( id, title, venue, starts_at, ends_at, booking_closes_at )"
-    )
+    .select(`id, status, waitlist_position, promoted_at, created_at, play_sessions ( ${sessionSelect} )`)
     .eq("user_id", user.id)
     .in("status", [...ACTIVE_BOOKING_STATUSES])
     .order("created_at", { ascending: false });
 
   const { data: past, error: pastErr } = await supabase
     .from("bookings")
-    .select(
-      "id, status, waitlist_position, created_at, play_sessions ( id, title, venue, starts_at, ends_at, booking_closes_at )"
-    )
+    .select(`id, status, waitlist_position, promoted_at, created_at, play_sessions ( ${sessionSelect} )`)
     .eq("user_id", user.id)
     .eq("status", "withdrawn")
     .order("created_at", { ascending: false })
@@ -85,7 +107,7 @@ export default async function MyBookingsPage() {
   if (activeErr || pastErr) {
     return (
       <p className="text-sm text-red-400">
-        Could not load bookings. ({activeErr?.message ?? pastErr?.message})
+        Could not load bookings. Please try again later.
       </p>
     );
   }
@@ -98,7 +120,15 @@ export default async function MyBookingsPage() {
     (b) => b.play_sessions && b.play_sessions.starts_at <= now
   );
 
-  function BookingList({ rows, empty }: { rows: BookingRow[]; empty: string }) {
+  function BookingList({
+    rows,
+    empty,
+    showWithdraw,
+  }: {
+    rows: BookingRow[];
+    empty: string;
+    showWithdraw?: boolean;
+  }) {
     if (!rows.length) {
       return <p className="mt-2 text-sm text-[#8b949e]">{empty}</p>;
     }
@@ -107,11 +137,17 @@ export default async function MyBookingsPage() {
         {rows.map((b) => {
           const s = b.play_sessions;
           if (!s) return null;
+          const withdraw = showWithdraw && canWithdrawBooking(b, now);
           return (
             <li
               key={b.id}
               className="rounded-lg border border-[#30363d] bg-[#161b22] transition hover:border-[#58a6ff]"
             >
+              {b.promoted_at ? (
+                <div className="p-4 pb-0">
+                  <PromotionBanner bookingId={b.id} promotedAt={b.promoted_at} />
+                </div>
+              ) : null}
               <Link href={`/sessions/${s.id}`} className="block p-4">
                 <div className="flex items-start justify-between gap-2">
                   <span className="font-medium text-white">{s.title}</span>
@@ -122,14 +158,24 @@ export default async function MyBookingsPage() {
                   {formatSessionRange(s.starts_at, s.ends_at)}
                 </p>
                 {b.status === "waitlist" && b.waitlist_position != null ? (
-                  <p className="mt-1 text-xs text-[#8b949e]">Waitlist position #{b.waitlist_position}</p>
+                  <p className="mt-1 text-xs text-[#8b949e]">
+                    {formatWaitlistPosition(b.waitlist_position)}
+                  </p>
                 ) : null}
                 <p className="mt-2 text-xs text-[#8b949e]">
                   Booked {formatSessionDateTime(b.created_at)}
                 </p>
               </Link>
-              <div className="border-t border-[#30363d] px-4 py-2">
+              <div className="border-t border-[#30363d] px-4 py-2 space-y-2">
                 <AddToCalendarLink sessionId={s.id} />
+                {withdraw ? (
+                  <WithdrawButton
+                    sessionId={s.id}
+                    bookingFeeCents={s.booking_fee_cents}
+                    withdrawalFeeCents={s.withdrawal_fee_cents}
+                    canWithdraw
+                  />
+                ) : null}
               </div>
             </li>
           );
@@ -142,12 +188,13 @@ export default async function MyBookingsPage() {
     <div>
       <h1 className="text-xl font-semibold text-white">My bookings</h1>
       <p className="mt-1 text-sm text-[#8b949e]">
-        Upcoming sessions you are booked or waitlisted for. Open a session to cancel or rebook.
+        Upcoming sessions you are booked or waitlisted for. Withdraw from here or open a session for
+        details.
       </p>
 
       <section className="mt-8">
         <h2 className="text-lg font-medium text-white">Upcoming</h2>
-        <BookingList rows={upcoming} empty="No upcoming bookings." />
+        <BookingList rows={upcoming} empty="No upcoming bookings." showWithdraw />
       </section>
 
       {inProgressOrPastActive.length > 0 ? (
@@ -158,8 +205,8 @@ export default async function MyBookingsPage() {
       ) : null}
 
       <section className="mt-8">
-        <h2 className="text-lg font-medium text-white">Cancelled</h2>
-        <BookingList rows={normalizeBookingRows(past)} empty="No cancelled bookings." />
+        <h2 className="text-lg font-medium text-white">Withdrawn</h2>
+        <BookingList rows={normalizeBookingRows(past)} empty="No withdrawn bookings." />
       </section>
 
       <Link href="/sessions" className="mt-8 inline-block text-sm text-[#58a6ff] hover:underline">

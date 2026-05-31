@@ -1,5 +1,6 @@
 import { AdminSessionForm } from "@/app/admin/(protected)/AdminSessionForm";
-import { lockPlaySessionForm } from "@/app/actions/sessions";
+import { CopyPlayerLinkButton } from "@/app/admin/(protected)/CopyPlayerLinkButton";
+import { lockPlaySessionForm, unlockPlaySessionForm } from "@/app/actions/sessions";
 import { getBookingTimezoneLabel } from "@/lib/datetime";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
@@ -36,15 +37,26 @@ export default async function AdminHomePage() {
                     <td className="p-3 text-white">{s.title}</td>
                     <td className="p-3 text-[#8b949e]">{new Date(s.starts_at).toLocaleString()}</td>
                     <td className="p-3 capitalize text-[#8b949e]">{s.status}</td>
-                    <td className="p-3">
+                    <td className="p-3 space-y-1">
                       <Link href={`/admin/sessions/${s.id}`} className="text-[#58a6ff] hover:underline">
                         Bookings
                       </Link>
+                      <div>
+                        <CopyPlayerLinkButton sessionId={s.id} />
+                      </div>
                       {s.status === "open" ? (
-                        <form className="mt-2 inline-block" action={lockPlaySessionForm}>
+                        <form className="inline-block" action={lockPlaySessionForm}>
                           <input type="hidden" name="id" value={s.id} />
                           <button type="submit" className="text-xs text-red-400 hover:underline">
                             Lock slot
+                          </button>
+                        </form>
+                      ) : null}
+                      {s.status === "locked" ? (
+                        <form className="inline-block" action={unlockPlaySessionForm}>
+                          <input type="hidden" name="id" value={s.id} />
+                          <button type="submit" className="text-xs text-[#3fb950] hover:underline">
+                            Unlock slot
                           </button>
                         </form>
                       ) : null}

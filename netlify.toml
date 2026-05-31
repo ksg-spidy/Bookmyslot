@@ -4,6 +4,15 @@
   command = "npm run build"
   publish = ".next"
 
+# Zero-Netlify workflow: skip preview/branch builds (saves build minutes).
+# Production still builds on main when merged — deploy only after explicit approval.
+# Commits may also include [skip netlify] in the message as a fallback.
+[context.deploy-preview]
+  ignore = "exit 0"
+
+[context.branch-deploy]
+  ignore = "exit 0"
+
 [build.environment]
   NODE_VERSION = "20"
   # Anon key is intentionally public; omit build artifacts from secret scan

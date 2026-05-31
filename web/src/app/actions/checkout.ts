@@ -2,8 +2,10 @@
 
 import { getActiveBookingForUser } from "@/lib/bookings/queries";
 import { getProfile } from "@/lib/auth";
+import { requireServerEnv, getPublicSiteUrl } from "@/lib/env";
 import { isProfileComplete } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
+import { randomUUID } from "crypto";
 import Stripe from "stripe";
 
 export async function startCheckout(playSessionId: string) {
@@ -44,9 +46,12 @@ export async function startCheckout(playSessionId: string) {
     };
   }
 
-  const secret = process.env.STRIPE_SECRET_KEY;
-  const site = process.env.NEXT_PUBLIC_SITE_URL;
-  if (!secret || !site) {
+  let secret: string;
+  let site: string;
+  try {
+    secret = requireServerEnv("STRIPE_SECRET_KEY");
+    site = getPublicSiteUrl();
+  } catch {
     return { error: "Server missing Stripe or site URL configuration." };
   }
 
@@ -78,7 +83,7 @@ export async function startCheckout(playSessionId: string) {
         success_url: `${site}/sessions/${playSessionId}?paid=1&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${site}/sessions/${playSessionId}?canceled=1`,
       },
-      { idempotencyKey: `checkout-${user.id}-${playSessionId}` }
+      { idempotencyKey: `checkout-web-${randomUUID()}` }
     );
 
     if (!checkout.url) {

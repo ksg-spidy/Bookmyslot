@@ -98,6 +98,8 @@ Bookings are created when the webhook runs, or when the player returns from chec
 
 Run `supabase/migrations/005_bookings_rebook_after_withdraw.sql` in the SQL Editor after earlier migrations.
 
+Run `supabase/migrations/006_promoted_at.sql` for in-app waitlist promotion banners (`bookings.promoted_at`).
+
 ## 5. Local run
 
 ```bash

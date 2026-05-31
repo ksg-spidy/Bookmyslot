@@ -1,5 +1,6 @@
 import { SessionDetailBody } from "@/components/SessionDetailBody";
 import { getSessionBookingCounts } from "@/lib/bookings/counts";
+import { getBrowseGuestCtaLabel, getCheckoutButtonLabel } from "@/lib/copy/bookingCopy";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { getSessionUser } from "@/lib/auth";
 import Link from "next/link";
@@ -26,6 +27,10 @@ export default async function BrowseSessionPage({ params }: Props) {
   const now = new Date();
   const bookingOpen =
     session.status === "open" && new Date(session.booking_closes_at as string) > now;
+  const bookLabel = getCheckoutButtonLabel({
+    spotsRemaining: counts.spotsRemaining,
+    bookingFeeCents: session.booking_fee_cents as number,
+  });
 
   return (
     <div>
@@ -41,7 +46,7 @@ export default async function BrowseSessionPage({ params }: Props) {
             href={`/sessions/${id}`}
             className="inline-block rounded-lg bg-[#238636] px-4 py-2 font-medium text-white hover:bg-[#2ea043]"
           >
-            Book this session
+            {bookLabel}
           </Link>
         ) : bookingOpen ? (
           <div className="space-y-2">
@@ -49,7 +54,10 @@ export default async function BrowseSessionPage({ params }: Props) {
               href={`/login?next=${encodeURIComponent(`/sessions/${id}`)}`}
               className="inline-block rounded-lg bg-[#238636] px-4 py-2 font-medium text-white hover:bg-[#2ea043]"
             >
-              Sign in to book
+              {getBrowseGuestCtaLabel({
+                spotsRemaining: counts.spotsRemaining,
+                bookingFeeCents: session.booking_fee_cents as number,
+              })}
             </Link>
             <p className="text-xs text-[#8b949e]">Magic-link sign-in — no password.</p>
           </div>

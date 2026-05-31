@@ -88,3 +88,31 @@ export async function lockPlaySessionForm(formData: FormData) {
   if (!id) return;
   await lockPlaySession(id);
 }
+
+export async function unlockPlaySession(sessionId: string) {
+  if (!(await requireAdmin())) {
+    return { error: "Unauthorized." };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("play_sessions")
+    .update({ status: "open" })
+    .eq("id", sessionId)
+    .eq("status", "locked");
+
+  if (error) {
+    return { error: error.message };
+  }
+  revalidatePath("/admin");
+  revalidatePath("/sessions");
+  revalidatePath("/browse");
+  revalidatePath(`/sessions/${sessionId}`);
+  revalidatePath(`/browse/${sessionId}`);
+  return { ok: true };
+}
+
+export async function unlockPlaySessionForm(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  await unlockPlaySession(id);
+}

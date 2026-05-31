@@ -59,8 +59,8 @@ function LinkInner() {
         </p>
       ) : null}
       {status === "done" ? (
-        <Link href="/" className="mt-6 text-sm text-[#58a6ff] hover:underline">
-          Continue to ShuttleBook
+        <Link href="/sessions/bookings" className="mt-6 text-sm text-[#58a6ff] hover:underline">
+          View my bookings
         </Link>
       ) : null}
     </div>

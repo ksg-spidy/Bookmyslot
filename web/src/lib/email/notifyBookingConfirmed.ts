@@ -1,21 +1,27 @@
 import type { createServiceClient } from "@/lib/supabase/admin";
-import { PROMOTION_CONFIRMED_MESSAGE, sessionPageUrl } from "@/lib/copy/bookingCopy";
+import {
+  buildBookingConfirmationEmailStatusLine,
+  sessionCalendarUrl,
+  sessionPageUrl,
+} from "@/lib/copy/bookingCopy";
 import { formatSessionRange } from "@/lib/datetime";
 import { sendBookingEmail } from "@/lib/email/sendBookingEmail";
 
 type Admin = ReturnType<typeof createServiceClient>;
 
-export async function notifyWaitlistPromotedByEmail(opts: {
+export async function notifyBookingConfirmedByEmail(opts: {
   admin: Admin;
   userId: string;
   playSessionId: string;
+  status: "confirmed" | "waitlist";
+  waitlistPosition: number | null;
 }): Promise<void> {
-  const { admin, userId, playSessionId } = opts;
+  const { admin, userId, playSessionId, status, waitlistPosition } = opts;
 
   const { data: authUser, error: authErr } = await admin.auth.admin.getUserById(userId);
   const email = authUser?.user?.email?.trim();
   if (authErr || !email) {
-    if (authErr) console.error("getUserById for promotion email", authErr);
+    if (authErr) console.error("getUserById for booking email", authErr);
     return;
   }
 
@@ -26,7 +32,7 @@ export async function notifyWaitlistPromotedByEmail(opts: {
     .single();
 
   if (sErr || !session) {
-    console.error("play_sessions for promotion email", sErr);
+    console.error("play_sessions for booking email", sErr);
     return;
   }
 
@@ -34,28 +40,34 @@ export async function notifyWaitlistPromotedByEmail(opts: {
   const venue = (session.venue as string) ?? "";
   const when = formatSessionRange(session.starts_at as string, session.ends_at as string);
   const sessionUrl = sessionPageUrl(playSessionId);
+  const calendarUrl = sessionCalendarUrl(playSessionId);
+
+  const statusLine = buildBookingConfirmationEmailStatusLine(status, waitlistPosition);
 
   const text = [
-    PROMOTION_CONFIRMED_MESSAGE,
+    "Thanks for your payment — your ShuttleBook booking is saved.",
+    "",
+    statusLine,
     "",
     `${title}`,
     venue,
     when,
     "",
-    sessionUrl ? `View your booking: ${sessionUrl}` : "",
+    sessionUrl ? `View booking: ${sessionUrl}` : "",
+    calendarUrl ? `Add to calendar: ${calendarUrl}` : "",
     "",
     "— ShuttleBook",
   ]
     .filter(Boolean)
     .join("\n");
 
-  const sent = await sendBookingEmail({
-    to: email,
-    subject: `ShuttleBook: confirmed for ${title}`,
-    text,
-  });
+  const subject =
+    status === "confirmed"
+      ? `ShuttleBook: confirmed for ${title}`
+      : `ShuttleBook: waitlisted for ${title}`;
 
+  const sent = await sendBookingEmail({ to: email, subject, text });
   if (!sent.ok && sent.error !== "email_not_configured") {
-    console.error("Waitlist promotion email failed", sent.error);
+    console.error("Booking confirmation email failed", sent.error);
   }
 }

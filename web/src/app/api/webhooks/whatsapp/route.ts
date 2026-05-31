@@ -1,8 +1,13 @@
+import { createServiceClient } from "@/lib/supabase/admin";
+import { warnIfWhatsAppSecretMissing } from "@/lib/env";
 import { verifyMetaSignature } from "@/lib/whatsapp/verifySignature";
+import { claimWhatsAppMessage } from "@/lib/whatsapp/messageDedup";
 import { processInboundWhatsAppMessage, type WhatsAppInboundMessage } from "@/lib/whatsapp/processInbound";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
+
+warnIfWhatsAppSecretMissing();
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -42,6 +47,7 @@ export async function POST(request: Request) {
     }>;
   };
 
+  const admin = createServiceClient();
   const entries = b.entry ?? [];
   for (const ent of entries) {
     for (const ch of ent.changes ?? []) {
@@ -50,6 +56,8 @@ export async function POST(request: Request) {
       if (!messages?.length) continue;
       const contactName = val?.contacts?.[0]?.profile?.name;
       for (const msg of messages) {
+        const shouldProcess = await claimWhatsAppMessage(admin, msg.id);
+        if (!shouldProcess) continue;
         await processInboundWhatsAppMessage(msg, contactName);
       }
     }

@@ -1,5 +1,5 @@
-import { syncBookingAfterPayment } from "@/app/actions/syncBooking";
 import { AddToCalendarLink } from "@/components/AddToCalendarLink";
+import { PromotionBanner } from "@/components/PromotionBanner";
 import { ProfileIncompleteBanner } from "@/components/ProfileIncompleteBanner";
 import { SessionDetailBody } from "@/components/SessionDetailBody";
 import { YourBooking } from "@/app/sessions/[id]/YourBooking";
@@ -33,12 +33,7 @@ export default async function SessionDetailPage({ params, searchParams }: Props)
   const admin = createServiceClient();
   const counts = await getSessionBookingCounts(admin, id, session.max_players as number);
 
-  let booking = await getActiveBookingForUser(supabase, id, user.id);
-
-  if (sp.paid === "1" && !booking && sp.session_id?.trim()) {
-    await syncBookingAfterPayment(id, sp.session_id);
-    booking = await getActiveBookingForUser(supabase, id, user.id);
-  }
+  const booking = await getActiveBookingForUser(supabase, id, user.id);
 
   const profile = await getProfile();
   const profileComplete = isProfileComplete(profile);
@@ -63,17 +58,10 @@ export default async function SessionDetailPage({ params, searchParams }: Props)
 
       {!profileComplete && open && !booking ? <ProfileIncompleteBanner /> : null}
 
-      {sp.paid === "1" && !booking ? (
-        <p className="mt-4 rounded-lg border border-[#238636] bg-[#0c2218] p-3 text-sm text-[#3fb950]">
-          Payment received — saving your booking now. This page will update in a few seconds.
-        </p>
+      {booking?.promoted_at ? (
+        <PromotionBanner bookingId={booking.id} promotedAt={booking.promoted_at as string} />
       ) : null}
-      {sp.paid === "1" && booking ? (
-        <p className="mt-4 rounded-lg border border-[#238636] bg-[#0c2218] p-3 text-sm text-[#3fb950]">
-          Payment received — your booking is{" "}
-          <strong className="capitalize">{booking.status}</strong>.
-        </p>
-      ) : null}
+
       {sp.canceled === "1" ? (
         <p className="mt-4 text-sm text-[#f0c93a]">Checkout canceled — you can try again when ready.</p>
       ) : null}
@@ -96,6 +84,8 @@ export default async function SessionDetailPage({ params, searchParams }: Props)
           bookingFeeCents={session.booking_fee_cents as number}
           withdrawalFeeCents={session.withdrawal_fee_cents as number}
           canWithdraw={canWithdraw}
+          spotsRemaining={counts.spotsRemaining}
+          waitlistCount={counts.waitlist}
         />
       </div>
     </div>

@@ -46,9 +46,9 @@ export function WithdrawButton({
   if (phase === "confirm") {
     return (
       <div className="mt-4 space-y-3 rounded-lg border border-[#30363d] bg-[#161b22] p-4 text-sm">
-        <p className="text-white">Cancel your booking?</p>
+        <p className="text-white">Withdraw from this session?</p>
         <p className="text-[#8b949e]">
-          Cancellation fee: <strong className="text-white">{formatAud(withdrawalFeeCents)}</strong>.
+          Withdrawal fee: <strong className="text-white">{formatAud(withdrawalFeeCents)}</strong>.
           Refund to your card: <strong className="text-white">{formatAud(refundCents)}</strong>.
         </p>
         <div className="flex flex-wrap gap-3">
@@ -58,7 +58,7 @@ export function WithdrawButton({
             onClick={() => void onConfirm()}
             className="rounded-lg bg-red-900/80 px-4 py-2 font-medium text-white hover:bg-red-800 disabled:opacity-60"
           >
-            {pending ? "Cancelling…" : "Yes, cancel booking"}
+            {pending ? "Withdrawing…" : "Yes, withdraw"}
           </button>
           <button
             type="button"
@@ -69,7 +69,7 @@ export function WithdrawButton({
             }}
             className="text-[#58a6ff] hover:underline"
           >
-            Keep booking
+            Keep my spot
           </button>
         </div>
         {error ? (
@@ -93,7 +93,7 @@ export function WithdrawButton({
         onClick={() => setPhase("confirm")}
         className="text-sm text-red-400 hover:underline"
       >
-        Cancel booking (refund minus {formatAud(withdrawalFeeCents)} fee)
+        Withdraw (refund minus {formatAud(withdrawalFeeCents)} fee)
       </button>
     </div>
   );
