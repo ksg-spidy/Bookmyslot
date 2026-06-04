@@ -60,10 +60,13 @@ async function sendHelp(waId: string): Promise<void> {
     { id: "MY", title: "My bookings" },
   ]);
   if (!r.ok) {
-    await sendWhatsAppText(
+    const fallback = await sendWhatsAppText(
       waId,
       "ShuttleBook\n\nCommands:\n• LIST — open sessions\n• BOOK — pay & book (or BOOK 2)\n• MY — your bookings\n• ROSTER — who's coming\n• STATUS — session details\n• WITHDRAW — withdraw & partial refund\n• LINK — connect to web login\n• HELP — this menu"
     );
+    if (!fallback.ok) {
+      console.error("WhatsApp HELP reply failed", { interactive: r.error, text: fallback.error });
+    }
   }
 }
 
@@ -91,24 +94,7 @@ export async function processInboundWhatsAppMessage(
   contactName?: string
 ): Promise<void> {
   const admin = createServiceClient();
-
-  const { data: inserted, error: dedupeErr } = await admin
-    .from("whatsapp_processed_messages")
-    .insert({ wa_message_id: msg.id })
-    .select("wa_message_id")
-    .maybeSingle();
-
-  if (dedupeErr) {
-    const code = (dedupeErr as { code?: string }).code;
-    if (code === "23505") {
-      return;
-    }
-    console.error("Dedupe insert failed", dedupeErr);
-    return;
-  }
-  if (!inserted) {
-    return;
-  }
+  // Dedup is handled in api/webhooks/whatsapp/route.ts via claimWhatsAppMessage().
 
   const waId = msg.from;
   const { data: identity, error: idErr } = await admin
