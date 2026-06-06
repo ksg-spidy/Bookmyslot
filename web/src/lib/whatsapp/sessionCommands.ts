@@ -109,13 +109,15 @@ export async function buildOpenSessionsListMessage(admin: Admin): Promise<string
 
   const lines = await Promise.all(
     sessions.map(async (s, i) => {
-      const counts = await getSessionBookingCounts(admin, s.id, s.max_players);
+      const counts = await getSessionBookingCounts(admin, s.id, s);
       const when = formatSessionDateTime(s.starts_at);
       const fee = formatAud(s.booking_fee_cents);
       const spots =
         counts.spotsRemaining > 0
           ? `${counts.spotsRemaining} spots left`
-          : `Full · ${counts.waitlist} on waitlist`;
+          : counts.waitlistRemaining <= 0
+            ? `Full · waitlist full (${counts.waitlist}/${counts.waitlistCapacity})`
+            : `Full · ${counts.waitlistRemaining} waitlist left`;
       return `${i + 1}. ${s.title}\n   ${s.venue} · ${when}\n   ${fee} · ${spots}`;
     })
   );
@@ -133,12 +135,14 @@ export async function buildStatusMessage(
   session: OpenPlaySession,
   listIndex?: number
 ): Promise<string> {
-  const counts = await getSessionBookingCounts(admin, session.id, session.max_players);
+  const counts = await getSessionBookingCounts(admin, session.id, session);
   const when = formatSessionRange(session.starts_at, session.ends_at);
   const spots =
     counts.spotsRemaining > 0
       ? `${counts.spotsRemaining} of ${session.max_players} spots left`
-      : `Full · ${counts.waitlist} on waitlist`;
+      : counts.waitlistRemaining <= 0
+        ? `Full · waitlist full (${counts.waitlist}/${counts.waitlistCapacity})`
+        : `Full · ${counts.waitlistRemaining} waitlist left`;
 
   const bookHint =
     listIndex != null ? `Reply BOOK ${listIndex} to pay.` : "Reply LIST to see sessions, then BOOK 1 to pay.";
@@ -257,6 +261,7 @@ export function humanizeFulfillReason(reason: string): string {
     payment_not_completed: "Payment has not completed yet.",
     missing_metadata: "Payment could not be linked to a session.",
     play_session_not_found: "This session is no longer available.",
+    waitlist_full: "This session and waitlist are full.",
   };
   if (map[reason]) return map[reason];
   if (reason.startsWith("play_session_unavailable")) {

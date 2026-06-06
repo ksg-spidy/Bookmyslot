@@ -22,14 +22,16 @@ export default async function BrowseSessionPage({ params }: Props) {
 
   if (error || !session) notFound();
 
-  const counts = await getSessionBookingCounts(admin, id, session.max_players as number);
+  const counts = await getSessionBookingCounts(admin, id, session);
   const user = await getSessionUser();
   const now = new Date();
   const bookingOpen =
     session.status === "open" && new Date(session.booking_closes_at as string) > now;
+  const capacityAvailable = counts.spotsRemaining > 0 || counts.waitlistRemaining > 0;
   const bookLabel = getCheckoutButtonLabel({
     spotsRemaining: counts.spotsRemaining,
     bookingFeeCents: session.booking_fee_cents as number,
+    waitlistRemaining: counts.waitlistRemaining,
   });
 
   return (
@@ -41,7 +43,9 @@ export default async function BrowseSessionPage({ params }: Props) {
       <SessionDetailBody session={session} counts={counts} />
 
       <div className="mt-8 border-t border-[#30363d] pt-6">
-        {user ? (
+        {!capacityAvailable ? (
+          <p className="text-sm text-[#8b949e]">This session and waitlist are full.</p>
+        ) : user ? (
           <Link
             href={`/sessions/${id}`}
             className="inline-block rounded-lg bg-[#238636] px-4 py-2 font-medium text-white hover:bg-[#2ea043]"
@@ -57,6 +61,7 @@ export default async function BrowseSessionPage({ params }: Props) {
               {getBrowseGuestCtaLabel({
                 spotsRemaining: counts.spotsRemaining,
                 bookingFeeCents: session.booking_fee_cents as number,
+                waitlistRemaining: counts.waitlistRemaining,
               })}
             </Link>
             <p className="text-xs text-[#8b949e]">Magic-link sign-in — no password.</p>

@@ -11,6 +11,7 @@ export function BookButton({
   spotsRemaining,
   bookingFeeCents,
   waitlistCount = 0,
+  waitlistRemaining,
 }: {
   sessionId: string;
   disabled?: boolean;
@@ -18,15 +19,17 @@ export function BookButton({
   spotsRemaining?: number;
   bookingFeeCents?: number;
   waitlistCount?: number;
+  waitlistRemaining?: number;
 }) {
   const [pending, setPending] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   const full = spotsRemaining !== undefined && spotsRemaining <= 0;
+  const waitlistFull = full && waitlistRemaining !== undefined && waitlistRemaining <= 0;
   const buttonLabel =
     label ??
     (spotsRemaining !== undefined && bookingFeeCents !== undefined
-      ? getCheckoutButtonLabel({ spotsRemaining, bookingFeeCents })
+      ? getCheckoutButtonLabel({ spotsRemaining, bookingFeeCents, waitlistRemaining })
       : "Pay & book");
 
   async function onBook() {
@@ -46,13 +49,13 @@ export function BookButton({
   return (
     <div>
       {full && bookingFeeCents !== undefined ? (
-        <p className="mb-2 text-xs text-[#f0c93a]">
-          {getWaitlistCheckoutHint(waitlistCount, bookingFeeCents)}
+        <p className={`mb-2 text-xs ${waitlistFull ? "text-red-400" : "text-[#f0c93a]"}`}>
+          {getWaitlistCheckoutHint(waitlistCount, bookingFeeCents, waitlistRemaining)}
         </p>
       ) : null}
       <button
         type="button"
-        disabled={disabled || pending}
+        disabled={disabled || pending || waitlistFull}
         onClick={onBook}
         className="rounded-lg bg-[#238636] px-4 py-2 font-medium text-white hover:bg-[#2ea043] disabled:cursor-not-allowed disabled:opacity-50"
       >

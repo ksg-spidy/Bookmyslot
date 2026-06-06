@@ -12,11 +12,19 @@ type Session = {
   booking_closes_at: string;
   booking_fee_cents: number;
   max_players: number;
+  booking_code_count?: number | null;
+  waitlist_per_booking_code?: number | null;
 };
 
 function spotsLabel(counts: SessionBookingCounts, maxPlayers: number): string {
   if (counts.spotsRemaining <= 0) {
-    const wl = counts.waitlist > 0 ? ` · ${counts.waitlist} on waitlist` : "";
+    if (counts.waitlistRemaining <= 0) {
+      return `Full · waitlist full (${counts.waitlist}/${counts.waitlistCapacity})`;
+    }
+    const wl =
+      counts.waitlist > 0
+        ? ` · ${counts.waitlist} on waitlist · ${counts.waitlistRemaining} waitlist left`
+        : ` · ${counts.waitlistRemaining} waitlist left`;
     return `Full${wl}`;
   }
   return `${counts.spotsRemaining} of ${maxPlayers} spots left`;
@@ -51,7 +59,9 @@ export function SessionCard({
       <div className="mt-1 text-sm text-[#8b949e]">{session.venue}</div>
       <div className="mt-2 text-sm text-white">{formatSessionRange(session.starts_at, session.ends_at)}</div>
       <div className="mt-2 text-xs text-[#8b949e]">
-        {formatAud(session.booking_fee_cents)} · {spotsLabel(counts, session.max_players)} · booking closes{" "}
+        {formatAud(session.booking_fee_cents)} · {session.booking_code_count ?? 1} code
+        {(session.booking_code_count ?? 1) === 1 ? "" : "s"} ·{" "}
+        {spotsLabel(counts, session.max_players)} · booking closes{" "}
         {formatSessionDateTime(session.booking_closes_at)}
       </div>
     </Link>

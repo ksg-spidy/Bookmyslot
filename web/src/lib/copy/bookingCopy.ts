@@ -46,9 +46,13 @@ export function formatAudShort(cents: number): string {
 export function getBrowseGuestCtaLabel(opts: {
   spotsRemaining: number;
   bookingFeeCents: number;
+  waitlistRemaining?: number;
 }): string {
   const fee = formatAud(opts.bookingFeeCents);
   if (opts.spotsRemaining <= 0) {
+    if (opts.waitlistRemaining !== undefined && opts.waitlistRemaining <= 0) {
+      return "Session full";
+    }
     return `Sign in — join waitlist (${fee})`;
   }
   return `Sign in to book — ${fee}`;
@@ -57,19 +61,34 @@ export function getBrowseGuestCtaLabel(opts: {
 export function getCheckoutButtonLabel(opts: {
   spotsRemaining: number;
   bookingFeeCents: number;
+  waitlistRemaining?: number;
 }): string {
   const fee = formatAud(opts.bookingFeeCents);
   if (opts.spotsRemaining <= 0) {
+    if (opts.waitlistRemaining !== undefined && opts.waitlistRemaining <= 0) {
+      return "Waitlist full";
+    }
     return `Join waitlist — pay ${fee}`;
   }
   return `Pay & book — ${fee}`;
 }
 
-export function getWaitlistCheckoutHint(waitlistCount: number, bookingFeeCents: number): string {
+export function getWaitlistCheckoutHint(
+  waitlistCount: number,
+  bookingFeeCents: number,
+  waitlistRemaining?: number
+): string {
   const fee = formatAud(bookingFeeCents);
+  if (waitlistRemaining !== undefined && waitlistRemaining <= 0) {
+    return `Session and waitlist are full. ${waitlistCount} player${waitlistCount === 1 ? "" : "s"} already on the waitlist.`;
+  }
   const queue =
     waitlistCount > 0 ? `${waitlistCount} already on the waitlist. ` : "";
-  return `Session is full. ${queue}You pay ${fee} now to join the waitlist. If someone withdraws, the next person is promoted automatically.`;
+  const availability =
+    waitlistRemaining !== undefined
+      ? `${waitlistRemaining} waitlist place${waitlistRemaining === 1 ? "" : "s"} left. `
+      : "";
+  return `Session is full. ${availability}${queue}You pay ${fee} now to join the waitlist. If someone withdraws, the next person is promoted automatically.`;
 }
 
 /** WhatsApp CTA button label (max 20 characters). */
@@ -86,12 +105,15 @@ export function getWhatsAppBookIntro(opts: {
   full: boolean;
   bookingFeeCents: number;
   waitlistCount: number;
+  waitlistRemaining?: number;
   spotsRemaining: number;
 }): string {
   const fee = formatAud(opts.bookingFeeCents);
   const refund = refundPolicyUrl();
   const availability = opts.full
-    ? opts.waitlistCount > 0
+    ? opts.waitlistRemaining !== undefined && opts.waitlistRemaining <= 0
+      ? `Full · waitlist full (${opts.waitlistCount} waiting)`
+      : opts.waitlistCount > 0
       ? `Full · join waitlist (${opts.waitlistCount} waiting)`
       : "Full · join waitlist"
     : `${opts.spotsRemaining} spot${opts.spotsRemaining === 1 ? "" : "s"} left`;

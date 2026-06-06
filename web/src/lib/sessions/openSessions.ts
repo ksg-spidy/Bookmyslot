@@ -8,6 +8,9 @@ export type OpenPlaySession = {
   ends_at: string;
   booking_closes_at: string;
   max_players: number;
+  booking_code_count: number;
+  players_per_booking_code: number;
+  waitlist_per_booking_code: number;
   status: string;
   booking_fee_cents: number;
   withdrawal_fee_cents: number;
@@ -20,7 +23,7 @@ export async function fetchOpenPlaySessions(
   const { data, error } = await client
     .from("play_sessions")
     .select(
-      "id, title, venue, starts_at, ends_at, booking_closes_at, max_players, status, booking_fee_cents, withdrawal_fee_cents"
+      "id, title, venue, starts_at, ends_at, booking_closes_at, max_players, booking_code_count, players_per_booking_code, waitlist_per_booking_code, status, booking_fee_cents, withdrawal_fee_cents"
     )
     .eq("status", "open")
     .gt("booking_closes_at", now)

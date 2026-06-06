@@ -9,7 +9,9 @@ export default async function AdminHomePage() {
   const supabase = await createClient();
   const { data: sessions, error } = await supabase
     .from("play_sessions")
-    .select("id, title, venue, starts_at, booking_closes_at, max_players, status, booking_fee_cents")
+    .select(
+      "id, title, venue, starts_at, booking_closes_at, max_players, booking_code_count, players_per_booking_code, waitlist_per_booking_code, status, booking_fee_cents"
+    )
     .order("starts_at", { ascending: false });
 
   return (
@@ -27,6 +29,7 @@ export default async function AdminHomePage() {
                 <tr>
                   <th className="p-3">Title</th>
                   <th className="p-3">Starts</th>
+                  <th className="p-3">Capacity</th>
                   <th className="p-3">Status</th>
                   <th className="p-3"></th>
                 </tr>
@@ -36,6 +39,11 @@ export default async function AdminHomePage() {
                   <tr key={s.id} className="border-b border-[#21262d]">
                     <td className="p-3 text-white">{s.title}</td>
                     <td className="p-3 text-[#8b949e]">{new Date(s.starts_at).toLocaleString()}</td>
+                    <td className="p-3 text-[#8b949e]">
+                      {s.booking_code_count ?? 1} code{(s.booking_code_count ?? 1) === 1 ? "" : "s"} ·{" "}
+                      {s.max_players} players ·{" "}
+                      {(s.booking_code_count ?? 1) * (s.waitlist_per_booking_code ?? 3)} waitlist
+                    </td>
                     <td className="p-3 capitalize text-[#8b949e]">{s.status}</td>
                     <td className="p-3 space-y-1">
                       <Link href={`/admin/sessions/${s.id}`} className="text-[#58a6ff] hover:underline">

@@ -7,6 +7,7 @@ const MESSAGES: Record<string, string> = {
   payment_not_completed: "Payment has not completed yet. Wait a few seconds and try again.",
   checkout_wrong_session: "This payment does not match this session. Contact the organiser.",
   checkout_wrong_user: "This payment is linked to a different account.",
+  waitlist_full: "This session and waitlist are full. Contact the organiser with your receipt.",
   sync_failed: "Something went wrong saving your booking. Try again or contact the organiser.",
 };
 

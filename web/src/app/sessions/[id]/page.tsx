@@ -31,7 +31,7 @@ export default async function SessionDetailPage({ params, searchParams }: Props)
   if (error || !session) notFound();
 
   const admin = createServiceClient();
-  const counts = await getSessionBookingCounts(admin, id, session.max_players as number);
+  const counts = await getSessionBookingCounts(admin, id, session);
 
   const booking = await getActiveBookingForUser(supabase, id, user.id);
 
@@ -86,6 +86,7 @@ export default async function SessionDetailPage({ params, searchParams }: Props)
           canWithdraw={canWithdraw}
           spotsRemaining={counts.spotsRemaining}
           waitlistCount={counts.waitlist}
+          waitlistRemaining={counts.waitlistRemaining}
         />
       </div>
     </div>

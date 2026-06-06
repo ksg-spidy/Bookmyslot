@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/admin";
+import { getSessionBookingCounts } from "@/lib/bookings/counts";
 import { getPublicSiteUrl, requireServerEnv } from "@/lib/env";
 import { randomUUID } from "crypto";
 import Stripe from "stripe";
@@ -45,6 +46,11 @@ export async function createWhatsAppCheckout(
 
   if (activeBooking) {
     return { error: "You already have an active booking for this session." };
+  }
+
+  const counts = await getSessionBookingCounts(admin, playSessionId, session);
+  if (counts.spotsRemaining <= 0 && counts.waitlistRemaining <= 0) {
+    return { error: "This session and waitlist are full." };
   }
 
   const stripe = new Stripe(secret);
