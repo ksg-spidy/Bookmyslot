@@ -1,5 +1,6 @@
 import { withdrawBooking } from "@/lib/bookings/withdraw";
 import type { createServiceClient } from "@/lib/supabase/admin";
+import { formatSessionDateTime } from "@/lib/datetime";
 import Stripe from "stripe";
 
 type Admin = ReturnType<typeof createServiceClient>;
@@ -54,15 +55,16 @@ export async function buildRosterMessage(
   }
 
   function displayName(row: (typeof list)[0]): string {
+    let name = "Player";
     if (row.user_id) {
       const n = nameByUserId.get(row.user_id as string);
-      if (n) return n;
-    }
-    if (row.whatsapp_identity_id) {
+      if (n) name = n;
+    } else if (row.whatsapp_identity_id) {
       const n = nameByWaIdentityId.get(row.whatsapp_identity_id as string);
-      if (n) return n;
+      if (n) name = n;
     }
-    return "Player";
+    const channel = row.user_id ? "website" : "WhatsApp";
+    return `${name} (${channel})`;
   }
 
   const sorted = [...list].sort((a, b) => {
@@ -78,7 +80,7 @@ export async function buildRosterMessage(
   const confirmed = sorted.filter((b) => b.status === "confirmed");
   const waitlisted = sorted.filter((b) => b.status === "waitlist");
 
-  let body = `${session.title}\n${session.venue}\nStarts: ${session.starts_at}\n\n`;
+  let body = `${session.title}\n${session.venue}\n${formatSessionDateTime(session.starts_at as string)}\n\n`;
   if (confirmed.length) {
     body += "Confirmed:\n";
     confirmed.forEach((b, i) => {

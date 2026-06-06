@@ -15,6 +15,7 @@ Linked dev/prod MVP uses one project unless you split later.
 cd web
 node scripts/apply-migration.mjs supabase/migrations/006_promoted_at.sql
 node scripts/apply-migration.mjs supabase/migrations/007_atomic_booking.sql
+node scripts/apply-migration.mjs supabase/migrations/008_fulfill_booking_status_ambiguous.sql
 ```
 
 Verify:

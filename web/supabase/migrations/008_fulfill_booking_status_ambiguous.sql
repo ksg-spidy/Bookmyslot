@@ -1,4 +1,4 @@
--- Atomic booking fulfillment and waitlist promotion (prevents overbooking / position collisions).
+-- Fix: RETURNS TABLE (status ...) shadows bookings.status in PL/pgSQL (ambiguous column).
 
 create or replace function public.fulfill_booking_atomic(
   p_play_session_id uuid,
@@ -111,7 +111,7 @@ begin
   limit 1;
 
   if v_withdrawn_id is not null then
-    update bookings
+    update bookings b
     set
       status = v_status,
       stripe_checkout_session_id = p_stripe_checkout_session_id,
@@ -119,8 +119,8 @@ begin
       waitlist_position = v_waitlist_position,
       promoted_at = null,
       updated_at = now()
-    where id = v_withdrawn_id
-    returning id into v_booking_id;
+    where b.id = v_withdrawn_id
+    returning b.id into v_booking_id;
   else
     insert into bookings (
       play_session_id,
@@ -228,13 +228,13 @@ begin
     return;
   end if;
 
-  update bookings
+  update bookings b
   set
     status = 'confirmed',
     waitlist_position = null,
     promoted_at = now(),
     updated_at = now()
-  where id = v_next.id;
+  where b.id = v_next.id;
 
   promoted_booking_id := v_next.id;
   promoted_user_id := v_next.user_id;
@@ -242,9 +242,3 @@ begin
   return next;
 end;
 $$;
-
-revoke all on function public.fulfill_booking_atomic(uuid, uuid, uuid, text, text) from public;
-revoke all on function public.promote_next_waitlist(uuid) from public;
-
-grant execute on function public.fulfill_booking_atomic(uuid, uuid, uuid, text, text) to service_role;
-grant execute on function public.promote_next_waitlist(uuid) to service_role;

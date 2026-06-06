@@ -5,10 +5,13 @@ import {
   getWhatsAppBookIntro,
   getWhatsAppPayButtonLabel,
 } from "@/lib/copy/bookingCopy";
+import { formatSessionDateTime } from "@/lib/datetime";
+import type { OpenPlaySession } from "@/lib/sessions/openSessions";
 import { sendWhatsAppCtaUrl } from "@/lib/whatsapp/sendCtaUrl";
 import { sendWhatsAppInteractiveButtons } from "@/lib/whatsapp/sendInteractiveButtons";
 import { sendWhatsAppText } from "@/lib/whatsapp/sendText";
 import {
+  buildInvalidSessionIndexMessage,
   buildMyBookingsMessage,
   buildOpenSessionsListMessage,
   buildStatusMessage,
@@ -52,17 +55,19 @@ function commandFromMessage(msg: WhatsAppInboundMessage): string | null {
 async function sendHelp(waId: string): Promise<void> {
   const body =
     "ShuttleBook — tap a button or reply with text.\n\n" +
-    "Text: LIST, BOOK, MY, STATUS, ROSTER, WITHDRAW, LINK, HELP\n" +
-    "(Multiple sessions? Reply LIST, then BOOK 1, STATUS 2, etc.)";
+    "LIST · sessions & fees\n" +
+    "MY · your bookings\n" +
+    "ROSTER · who's playing\n\n" +
+    "To book: reply LIST first, then BOOK (or BOOK 1 if several sessions).";
   const r = await sendWhatsAppInteractiveButtons(waId, body, [
     { id: "LIST", title: "Open sessions" },
-    { id: "BOOK", title: "Book a spot" },
     { id: "MY", title: "My bookings" },
+    { id: "ROSTER", title: "Who's coming" },
   ]);
   if (!r.ok) {
     const fallback = await sendWhatsAppText(
       waId,
-      "ShuttleBook\n\nCommands:\n• LIST — open sessions\n• BOOK — pay & book (or BOOK 2)\n• MY — your bookings\n• ROSTER — who's coming\n• STATUS — session details\n• WITHDRAW — withdraw & partial refund\n• LINK — connect to web login\n• HELP — this menu"
+      "ShuttleBook\n\n• LIST — open sessions & fees\n• BOOK — pay (after LIST)\n• MY — your bookings\n• ROSTER — who's coming\n• STATUS — session details\n• WITHDRAW — cancel & partial refund\n• LINK — connect to web login\n• HELP — this menu"
     );
     if (!fallback.ok) {
       console.error("WhatsApp HELP reply failed", { interactive: r.error, text: fallback.error });
@@ -74,15 +79,28 @@ async function sendBookCheckout(
   waId: string,
   playSessionId: string,
   identityId: string,
-  opts: { full: boolean; bookingFeeCents: number; waitlistCount: number }
+  session: OpenPlaySession,
+  counts: { spotsRemaining: number; waitlist: number }
 ): Promise<void> {
   const res = await createWhatsAppCheckout(playSessionId, identityId);
   if ("error" in res) {
-    await sendWhatsAppText(waId, `Could not start checkout: ${res.error}`);
+    await sendWhatsAppText(
+      waId,
+      `Sorry — we couldn't start payment (${res.error}). Reply LIST and try BOOK again.`
+    );
     return;
   }
-  const intro = getWhatsAppBookIntro(opts);
-  const buttonLabel = getWhatsAppPayButtonLabel(opts.full, opts.bookingFeeCents);
+  const full = counts.spotsRemaining <= 0;
+  const intro = getWhatsAppBookIntro({
+    title: session.title,
+    venue: session.venue,
+    when: formatSessionDateTime(session.starts_at),
+    full,
+    bookingFeeCents: session.booking_fee_cents,
+    waitlistCount: counts.waitlist,
+    spotsRemaining: counts.spotsRemaining,
+  });
+  const buttonLabel = getWhatsAppPayButtonLabel(full, session.booking_fee_cents);
   const cta = await sendWhatsAppCtaUrl(waId, intro, buttonLabel, res.url);
   if (!cta.ok) {
     await sendWhatsAppText(waId, `${intro}\n\n${res.url}`);
@@ -150,15 +168,21 @@ export async function processInboundWhatsAppMessage(
       await sendWhatsAppText(waId, await buildOpenSessionsListMessage(admin));
       return;
     }
+    if ("invalidIndex" in resolved) {
+      await sendWhatsAppText(
+        waId,
+        buildInvalidSessionIndexMessage(resolved.sessions, resolved.index, cmd)
+      );
+      return;
+    }
     const counts = await getSessionBookingCounts(
       admin,
       resolved.session.id,
       resolved.session.max_players
     );
-    await sendBookCheckout(waId, resolved.session.id, identityId, {
-      full: counts.spotsRemaining <= 0,
-      bookingFeeCents: resolved.session.booking_fee_cents,
-      waitlistCount: counts.waitlist,
+    await sendBookCheckout(waId, resolved.session.id, identityId, resolved.session, {
+      spotsRemaining: counts.spotsRemaining,
+      waitlist: counts.waitlist,
     });
     return;
   }
@@ -171,6 +195,13 @@ export async function processInboundWhatsAppMessage(
     }
     if ("needPick" in resolved) {
       await sendWhatsAppText(waId, await buildOpenSessionsListMessage(admin));
+      return;
+    }
+    if ("invalidIndex" in resolved) {
+      await sendWhatsAppText(
+        waId,
+        buildInvalidSessionIndexMessage(resolved.sessions, resolved.index, cmd)
+      );
       return;
     }
     const openSessions = await fetchOpenSessionsForWa(admin);
@@ -190,6 +221,13 @@ export async function processInboundWhatsAppMessage(
     }
     if ("needPick" in resolved) {
       await sendWhatsAppText(waId, await buildOpenSessionsListMessage(admin));
+      return;
+    }
+    if ("invalidIndex" in resolved) {
+      await sendWhatsAppText(
+        waId,
+        buildInvalidSessionIndexMessage(resolved.sessions, resolved.index, cmd)
+      );
       return;
     }
     const text = await buildRosterMessage(admin, resolved.session.id, identityId);

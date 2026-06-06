@@ -80,23 +80,35 @@ export function getWhatsAppPayButtonLabel(full: boolean, bookingFeeCents: number
 }
 
 export function getWhatsAppBookIntro(opts: {
+  title: string;
+  venue: string;
+  when: string;
   full: boolean;
   bookingFeeCents: number;
   waitlistCount: number;
+  spotsRemaining: number;
 }): string {
   const fee = formatAud(opts.bookingFeeCents);
   const refund = refundPolicyUrl();
+  const availability = opts.full
+    ? opts.waitlistCount > 0
+      ? `Full · join waitlist (${opts.waitlistCount} waiting)`
+      : "Full · join waitlist"
+    : `${opts.spotsRemaining} spot${opts.spotsRemaining === 1 ? "" : "s"} left`;
+
+  const header = [opts.title, opts.venue, opts.when, `${fee} · ${availability}`]
+    .filter(Boolean)
+    .join("\n");
+
   if (opts.full) {
-    const queue =
-      opts.waitlistCount > 0 ? ` (${opts.waitlistCount} on the waitlist)` : "";
     return (
-      `Session is full${queue}. You pay ${fee} now to join the waitlist. ` +
-      `If someone withdraws, the next person is promoted automatically.\n` +
+      `${header}\n\n` +
+      `Pay ${fee} now to join the waitlist. If someone withdraws, the next person is promoted automatically.\n` +
       `Refund policy: ${refund}\n\n` +
       `Tap below to pay securely.`
     );
   }
-  return "Tap the button below to pay securely and confirm your spot.";
+  return `${header}\n\nTap below to pay securely and confirm your spot.`;
 }
 
 export const WAITLIST_AFTER_BOOK_MESSAGE =

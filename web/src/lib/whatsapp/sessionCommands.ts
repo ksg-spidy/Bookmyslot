@@ -70,7 +70,12 @@ export async function fetchOpenSessionsForWa(admin: Admin): Promise<OpenPlaySess
 export async function resolveOpenSessionByIndex(
   admin: Admin,
   index: number | null
-): Promise<{ session: OpenPlaySession } | { sessions: OpenPlaySession[]; needPick: true } | { none: true }> {
+): Promise<
+  | { session: OpenPlaySession }
+  | { sessions: OpenPlaySession[]; needPick: true }
+  | { sessions: OpenPlaySession[]; invalidIndex: true; index: number }
+  | { none: true }
+> {
   const sessions = await fetchOpenSessionsForWa(admin);
   if (!sessions.length) return { none: true };
   if (sessions.length === 1 && index === null) {
@@ -80,8 +85,20 @@ export async function resolveOpenSessionByIndex(
     return { sessions, needPick: true };
   }
   const picked = sessions[index - 1];
-  if (!picked) return { sessions, needPick: true };
+  if (!picked) return { sessions, invalidIndex: true, index };
   return { session: picked };
+}
+
+export function buildInvalidSessionIndexMessage(
+  sessions: OpenPlaySession[],
+  index: number,
+  command: string
+): string {
+  const cmd = command.toUpperCase();
+  if (sessions.length === 1) {
+    return `Only 1 open session right now. Reply ${cmd} 1 (not ${cmd} ${index}).`;
+  }
+  return `Session ${index} not found. There ${sessions.length === 1 ? "is" : "are"} ${sessions.length} open session${sessions.length === 1 ? "" : "s"}. Reply LIST, then ${cmd} 1–${sessions.length}.`;
 }
 
 export async function buildOpenSessionsListMessage(admin: Admin): Promise<string> {
@@ -94,19 +111,21 @@ export async function buildOpenSessionsListMessage(admin: Admin): Promise<string
     sessions.map(async (s, i) => {
       const counts = await getSessionBookingCounts(admin, s.id, s.max_players);
       const when = formatSessionDateTime(s.starts_at);
+      const fee = formatAud(s.booking_fee_cents);
       const spots =
         counts.spotsRemaining > 0
           ? `${counts.spotsRemaining} spots left`
           : `Full · ${counts.waitlist} on waitlist`;
-      return `${i + 1}. ${s.title}\n   ${when} · ${spots}`;
+      return `${i + 1}. ${s.title}\n   ${s.venue} · ${when}\n   ${fee} · ${spots}`;
     })
   );
 
-  return (
-    "Open sessions:\n\n" +
-    lines.join("\n\n") +
-    "\n\nReply BOOK 1, STATUS 2, ROSTER 1, etc. (use the session number)."
-  );
+  const bookHint =
+    sessions.length === 1
+      ? "Reply BOOK to pay, or ROSTER to see who's coming."
+      : "Reply BOOK 1, STATUS 2, ROSTER 1, etc. (use the session number).";
+
+  return "Open sessions:\n\n" + lines.join("\n\n") + `\n\n${bookHint}`;
 }
 
 export async function buildStatusMessage(
