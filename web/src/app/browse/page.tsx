@@ -47,7 +47,15 @@ export default async function BrowsePage() {
             <SessionCard
               session={s}
               href={`/browse/${s.id}`}
-              counts={countsMap.get(s.id) ?? { confirmed: 0, waitlist: 0, spotsRemaining: s.max_players }}
+              counts={
+                countsMap.get(s.id) ?? {
+                  confirmed: 0,
+                  waitlist: 0,
+                  spotsRemaining: s.max_players,
+                  waitlistCapacity: s.booking_code_count * s.waitlist_per_booking_code,
+                  waitlistRemaining: s.booking_code_count * s.waitlist_per_booking_code,
+                }
+              }
             />
           </li>
         ))}

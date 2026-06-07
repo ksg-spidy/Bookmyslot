@@ -4,6 +4,11 @@
  */
 import assert from "node:assert/strict";
 import {
+  normalizeSessionCapacity,
+  parseCapacityField,
+  waitlistRemaining,
+} from "../src/lib/bookings/capacity";
+import {
   buildBookingConfirmationEmailStatusLine,
   buildWhatsAppBookingConfirmationBody,
   formatAudShort,
@@ -71,8 +76,16 @@ assert.equal(
   "Join waitlist — pay $15.00"
 );
 assert.equal(
+  getCheckoutButtonLabel({ spotsRemaining: 0, bookingFeeCents: 1500, waitlistRemaining: 0 }),
+  "Waitlist full"
+);
+assert.equal(
   getBrowseGuestCtaLabel({ spotsRemaining: 0, bookingFeeCents: 1200 }),
   "Sign in — join waitlist ($12.00)"
+);
+assert.equal(
+  getBrowseGuestCtaLabel({ spotsRemaining: 0, bookingFeeCents: 1200, waitlistRemaining: 0 }),
+  "Session full"
 );
 
 assert.equal(formatAudShort(1500), "$15");
@@ -103,5 +116,22 @@ const syncMsg = humanizeSyncError("checkout_not_ready");
 assert.ok(!syncMsg.includes("checkout_not_ready"));
 assert.equal(humanizeFulfillReason("payment_not_completed"), "Payment has not completed yet.");
 assert.ok(humanizeFulfillReason("play_session_unavailable:closed").includes("no longer accepting"));
+assert.equal(humanizeFulfillReason("waitlist_full"), "This session and waitlist are full.");
+
+// capacity helpers
+assert.deepEqual(normalizeSessionCapacity({
+  booking_code_count: 2,
+  players_per_booking_code: 6,
+  waitlist_per_booking_code: 3,
+}), {
+  bookingCodeCount: 2,
+  playersPerBookingCode: 6,
+  waitlistPerBookingCode: 3,
+  maxPlayers: 12,
+  waitlistCapacity: 6,
+});
+assert.equal(waitlistRemaining(3, 4), 0);
+assert.equal(parseCapacityField("6", 1), 6);
+assert.equal(parseCapacityField("bad", 3), 3);
 
 console.log("All helper tests passed.");

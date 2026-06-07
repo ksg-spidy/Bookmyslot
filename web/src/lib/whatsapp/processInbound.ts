@@ -80,7 +80,7 @@ async function sendBookCheckout(
   playSessionId: string,
   identityId: string,
   session: OpenPlaySession,
-  counts: { spotsRemaining: number; waitlist: number }
+  counts: { spotsRemaining: number; waitlist: number; waitlistRemaining: number }
 ): Promise<void> {
   const res = await createWhatsAppCheckout(playSessionId, identityId);
   if ("error" in res) {
@@ -98,6 +98,7 @@ async function sendBookCheckout(
     full,
     bookingFeeCents: session.booking_fee_cents,
     waitlistCount: counts.waitlist,
+    waitlistRemaining: counts.waitlistRemaining,
     spotsRemaining: counts.spotsRemaining,
   });
   const buttonLabel = getWhatsAppPayButtonLabel(full, session.booking_fee_cents);
@@ -178,11 +179,12 @@ export async function processInboundWhatsAppMessage(
     const counts = await getSessionBookingCounts(
       admin,
       resolved.session.id,
-      resolved.session.max_players
+      resolved.session
     );
     await sendBookCheckout(waId, resolved.session.id, identityId, resolved.session, {
       spotsRemaining: counts.spotsRemaining,
       waitlist: counts.waitlist,
+      waitlistRemaining: counts.waitlistRemaining,
     });
     return;
   }

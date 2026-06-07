@@ -10,6 +10,9 @@ type Session = {
   ends_at: string;
   booking_closes_at: string;
   max_players: number;
+  booking_code_count?: number | null;
+  players_per_booking_code?: number | null;
+  waitlist_per_booking_code?: number | null;
   booking_fee_cents: number;
   withdrawal_fee_cents: number;
 };
@@ -22,6 +25,10 @@ export function SessionDetailBody({
   counts: SessionBookingCounts;
 }) {
   const full = counts.spotsRemaining <= 0;
+  const waitlistFull = full && counts.waitlistRemaining <= 0;
+  const bookingCodeCount = session.booking_code_count ?? 1;
+  const playersPerCode = session.players_per_booking_code ?? session.max_players;
+  const waitlistPerCode = session.waitlist_per_booking_code ?? counts.waitlistCapacity;
 
   return (
     <>
@@ -55,8 +62,19 @@ export function SessionDetailBody({
             : `${counts.spotsRemaining} of ${session.max_players} spots left`}
         </span>
         {counts.waitlist > 0 ? (
-          <span className="text-[#8b949e]"> · {counts.waitlist} on waitlist</span>
+          <span className="text-[#8b949e]">
+            {" "}
+            · {counts.waitlist} on waitlist
+            {waitlistFull ? " · waitlist full" : ` · ${counts.waitlistRemaining} waitlist left`}
+          </span>
+        ) : waitlistFull ? (
+          <span className="text-[#8b949e]"> · waitlist full</span>
         ) : null}
+      </p>
+      <p className="mt-2 text-sm text-[#8b949e]">
+        {bookingCodeCount} booking code{bookingCodeCount === 1 ? "" : "s"} · {playersPerCode} player
+        {playersPerCode === 1 ? "" : "s"} per code · {waitlistPerCode} waitlist place
+        {waitlistPerCode === 1 ? "" : "s"} per code
       </p>
       <p className="mt-4 text-sm text-white">
         Booking fee: <strong>{formatAud(session.booking_fee_cents)}</strong> · Cancellation fee:{" "}
@@ -64,8 +82,9 @@ export function SessionDetailBody({
       </p>
       <p className="mt-1 text-sm text-[#8b949e]">
         Booking closes {formatSessionDateTime(session.booking_closes_at)} ({getBookingTimezoneLabel()}
-        ). If the session is full, you join the waitlist and pay the same booking fee now. If someone
-        withdraws, the next person in line is confirmed automatically.{" "}
+        ). If the session is full and waitlist places are available, you join the waitlist and pay
+        the same booking fee now. If someone withdraws, the next person in line is confirmed
+        automatically.{" "}
         <Link href="/refund" className="text-[#58a6ff] hover:underline">
           Refund policy
         </Link>

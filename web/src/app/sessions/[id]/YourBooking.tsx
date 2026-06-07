@@ -32,6 +32,7 @@ export function YourBooking({
   canWithdraw,
   spotsRemaining,
   waitlistCount,
+  waitlistRemaining,
 }: {
   sessionId: string;
   open: boolean;
@@ -44,6 +45,7 @@ export function YourBooking({
   canWithdraw: boolean;
   spotsRemaining: number;
   waitlistCount: number;
+  waitlistRemaining: number;
 }) {
   const router = useRouter();
   const [localBooking, setLocalBooking] = useState<Booking | null>(booking);
@@ -227,6 +229,7 @@ export function YourBooking({
           spotsRemaining={spotsRemaining}
           bookingFeeCents={bookingFeeCents}
           waitlistCount={waitlistCount}
+          waitlistRemaining={waitlistRemaining}
         />
       </div>
     );

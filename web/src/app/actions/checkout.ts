@@ -1,9 +1,11 @@
 "use server";
 
 import { getActiveBookingForUser } from "@/lib/bookings/queries";
+import { getSessionBookingCounts } from "@/lib/bookings/counts";
 import { getProfile } from "@/lib/auth";
 import { requireServerEnv, getPublicSiteUrl } from "@/lib/env";
 import { isProfileComplete } from "@/lib/profile";
+import { createServiceClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { randomUUID } from "crypto";
 import Stripe from "stripe";
@@ -44,6 +46,17 @@ export async function startCheckout(playSessionId: string) {
     return {
       error: "Add your name and phone in Profile settings before booking.",
     };
+  }
+
+  let counts;
+  try {
+    counts = await getSessionBookingCounts(createServiceClient(), playSessionId, session);
+  } catch {
+    return { error: "Server missing Supabase service role configuration." };
+  }
+
+  if (counts.spotsRemaining <= 0 && counts.waitlistRemaining <= 0) {
+    return { error: "This session and waitlist are full." };
   }
 
   let secret: string;

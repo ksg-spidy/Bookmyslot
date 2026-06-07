@@ -40,8 +40,43 @@ export function AdminSessionForm({ timezoneLabel }: { timezoneLabel: string }) {
       <label className="text-xs uppercase text-[#8b949e]">Booking closes (local)</label>
       <input name="booking_closes_at" type="datetime-local" className={inp} required />
 
-      <label className="text-xs uppercase text-[#8b949e]">Max players (13–16)</label>
-      <input name="max_players" type="number" min={13} max={16} defaultValue={16} className={inp} required />
+      <p className="text-xs text-[#8b949e]">
+        Capacity is based on booking codes/courts. Example: 1 code with 6 players allows
+        6 confirmed players and 3 waitlist places.
+      </p>
+
+      <label className="text-xs uppercase text-[#8b949e]">Booking codes / courts</label>
+      <input
+        name="booking_code_count"
+        type="number"
+        min={1}
+        max={50}
+        defaultValue={1}
+        className={inp}
+        required
+      />
+
+      <label className="text-xs uppercase text-[#8b949e]">Players per code</label>
+      <input
+        name="players_per_booking_code"
+        type="number"
+        min={1}
+        max={32}
+        defaultValue={6}
+        className={inp}
+        required
+      />
+
+      <label className="text-xs uppercase text-[#8b949e]">Waitlist per code</label>
+      <input
+        name="waitlist_per_booking_code"
+        type="number"
+        min={0}
+        max={32}
+        defaultValue={3}
+        className={inp}
+        required
+      />
 
       <label className="text-xs uppercase text-[#8b949e]">Booking fee (AUD)</label>
       <input

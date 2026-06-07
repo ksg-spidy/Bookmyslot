@@ -136,6 +136,11 @@ export default async function AdminSessionBookingsPage({ params }: Props) {
       </Link>
       <h1 className="mt-4 text-2xl font-semibold text-white">{session.title}</h1>
       <p className="text-sm text-[#8b949e]">{session.venue}</p>
+      <p className="mt-1 text-sm text-[#8b949e]">
+        {session.booking_code_count ?? 1} booking code{(session.booking_code_count ?? 1) === 1 ? "" : "s"} ·{" "}
+        {session.max_players} confirmed capacity ·{" "}
+        {(session.booking_code_count ?? 1) * (session.waitlist_per_booking_code ?? 3)} waitlist capacity
+      </p>
       <p className="mt-2">
         <a
           href={`/api/admin/sessions/${id}/export`}
