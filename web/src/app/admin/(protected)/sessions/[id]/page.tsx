@@ -1,4 +1,5 @@
 import { AdminSyncBookingForm } from "@/app/admin/(protected)/sessions/[id]/AdminSyncBookingForm";
+import { CloseoutButton } from "@/app/admin/(protected)/sessions/[id]/CloseoutButton";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
@@ -53,6 +54,14 @@ export default async function AdminSessionBookingsPage({ params }: Props) {
           Export CSV
         </a>
       </p>
+
+      {session.closed_out_at ? (
+        <p className="mt-4 text-sm text-[#3fb950]">
+          Closed out {new Date(session.closed_out_at).toLocaleString()} — leftover waitlist refunded.
+        </p>
+      ) : new Date(session.starts_at) <= new Date() ? (
+        <CloseoutButton playSessionId={id} />
+      ) : null}
 
       <AdminSyncBookingForm playSessionId={id} />
 
