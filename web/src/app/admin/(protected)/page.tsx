@@ -2,21 +2,154 @@ import { AdminSessionForm } from "@/app/admin/(protected)/AdminSessionForm";
 import { CopyPlayerLinkButton } from "@/app/admin/(protected)/CopyPlayerLinkButton";
 import { lockPlaySessionForm, unlockPlaySessionForm } from "@/app/actions/sessions";
 import { getBookingTimezoneLabel } from "@/lib/datetime";
+import { formatAud } from "@/lib/money";
+import { getMoneySummariesForSessions } from "@/lib/payments/ledger";
+import { createServiceClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 
+type NeedsAttention = {
+  stuckWithdrawing: { bookingId: string; sessionTitle: string; updatedAt: string }[];
+  unclosedSessions: { id: string; title: string; startsAt: string; waitlistCount: number }[];
+};
+
+async function getNeedsAttention(
+  admin: ReturnType<typeof createServiceClient>
+): Promise<NeedsAttention> {
+  const nowIso = new Date().toISOString();
+
+  const [{ data: stuck }, { data: pastUnclosed }] = await Promise.all([
+    admin
+      .from("bookings")
+      .select("id, updated_at, play_sessions ( title )")
+      .eq("status", "withdrawing")
+      .order("updated_at", { ascending: true }),
+    admin
+      .from("play_sessions")
+      .select("id, title, starts_at")
+      .lte("starts_at", nowIso)
+      .is("closed_out_at", null),
+  ]);
+
+  const pastIds = (pastUnclosed ?? []).map((s) => s.id as string);
+  const waitlistCounts = new Map<string, number>();
+  if (pastIds.length) {
+    const { data: leftovers } = await admin
+      .from("bookings")
+      .select("play_session_id")
+      .in("play_session_id", pastIds)
+      .eq("status", "waitlist");
+    for (const row of leftovers ?? []) {
+      const id = row.play_session_id as string;
+      waitlistCounts.set(id, (waitlistCounts.get(id) ?? 0) + 1);
+    }
+  }
+
+  return {
+    stuckWithdrawing: (stuck ?? []).map((b) => {
+      const session = b.play_sessions as { title: string } | { title: string }[] | null;
+      const title = Array.isArray(session) ? session[0]?.title : session?.title;
+      return {
+        bookingId: b.id as string,
+        sessionTitle: title ?? "Unknown session",
+        updatedAt: b.updated_at as string,
+      };
+    }),
+    unclosedSessions: (pastUnclosed ?? [])
+      .filter((s) => (waitlistCounts.get(s.id as string) ?? 0) > 0)
+      .map((s) => ({
+        id: s.id as string,
+        title: s.title as string,
+        startsAt: s.starts_at as string,
+        waitlistCount: waitlistCounts.get(s.id as string) ?? 0,
+      })),
+  };
+}
+
 export default async function AdminHomePage() {
   const supabase = await createClient();
+  const admin = createServiceClient();
   const { data: sessions, error } = await supabase
     .from("play_sessions")
     .select("id, title, venue, starts_at, booking_closes_at, max_players, status, booking_fee_cents")
     .order("starts_at", { ascending: false });
 
+  const sessionIds = (sessions ?? []).map((s) => s.id as string);
+  const [moneyBySession, attention] = await Promise.all([
+    getMoneySummariesForSessions(admin, sessionIds),
+    getNeedsAttention(admin),
+  ]);
+
+  const totals = { collected: 0, refunded: 0, feesRetained: 0, netHeld: 0 };
+  for (const summary of moneyBySession.values()) {
+    totals.collected += summary.collectedCents;
+    totals.refunded += summary.refundedCents;
+    totals.feesRetained += summary.feesRetainedCents;
+    totals.netHeld += summary.netHeldCents;
+  }
+
+  const hasAttentionItems =
+    attention.stuckWithdrawing.length > 0 || attention.unclosedSessions.length > 0;
+
   return (
     <div className="space-y-10">
+      {hasAttentionItems ? (
+        <section className="rounded-lg border border-[#f0c93a]/50 bg-[#161b22] p-4">
+          <h2 className="text-lg font-medium text-[#f0c93a]">Needs attention</h2>
+          {attention.stuckWithdrawing.length > 0 ? (
+            <div className="mt-3">
+              <p className="text-sm text-white">
+                Bookings stuck mid-withdrawal (refund may have been issued but the booking was not
+                finalized):
+              </p>
+              <ul className="mt-2 space-y-1 text-sm text-[#8b949e]">
+                {attention.stuckWithdrawing.map((b) => (
+                  <li key={b.bookingId}>
+                    {b.sessionTitle} — booking <code className="text-xs">{b.bookingId.slice(0, 8)}</code>,
+                    since {new Date(b.updatedAt).toLocaleString()}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {attention.unclosedSessions.length > 0 ? (
+            <div className="mt-3">
+              <p className="text-sm text-white">
+                Past sessions with paid waitlist players still waiting on a refund:
+              </p>
+              <ul className="mt-2 space-y-1 text-sm text-[#8b949e]">
+                {attention.unclosedSessions.map((s) => (
+                  <li key={s.id}>
+                    <Link href={`/admin/sessions/${s.id}`} className="text-[#58a6ff] hover:underline">
+                      {s.title}
+                    </Link>{" "}
+                    — started {new Date(s.startsAt).toLocaleString()}, {s.waitlistCount} waitlisted.
+                    Use “Close out session” to refund them.
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
       <section>
         <h1 className="text-2xl font-semibold text-white">Sessions</h1>
         <p className="mt-1 text-sm text-[#8b949e]">Create a slot, then share the player link after sign-in.</p>
+
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { label: "Collected (all sessions)", value: totals.collected },
+            { label: "Refunded", value: totals.refunded },
+            { label: "Fees retained", value: totals.feesRetained },
+            { label: "Net held", value: totals.netHeld },
+          ].map((stat) => (
+            <div key={stat.label} className="rounded-lg border border-[#30363d] bg-[#161b22] p-3">
+              <p className="text-xs text-[#8b949e]">{stat.label}</p>
+              <p className="mt-1 text-lg font-semibold text-white">{formatAud(stat.value)}</p>
+            </div>
+          ))}
+        </div>
 
         {error ? (
           <p className="mt-4 text-sm text-red-400">{error.message}</p>

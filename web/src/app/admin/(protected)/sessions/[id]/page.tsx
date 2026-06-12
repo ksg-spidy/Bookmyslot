@@ -1,5 +1,7 @@
 import { AdminSyncBookingForm } from "@/app/admin/(protected)/sessions/[id]/AdminSyncBookingForm";
 import { CloseoutButton } from "@/app/admin/(protected)/sessions/[id]/CloseoutButton";
+import { formatAud } from "@/lib/money";
+import { getSessionMoneySummary } from "@/lib/payments/ledger";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
@@ -14,6 +16,8 @@ export default async function AdminSessionBookingsPage({ params }: Props) {
 
   const { data: session, error: se } = await supabase.from("play_sessions").select("*").eq("id", id).single();
   if (se || !session) notFound();
+
+  const money = await getSessionMoneySummary(admin, id);
 
   const { data: bookings, error: be } = await admin
     .from("bookings")
@@ -54,6 +58,20 @@ export default async function AdminSessionBookingsPage({ params }: Props) {
           Export CSV
         </a>
       </p>
+
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          { label: "Collected", value: money.collectedCents },
+          { label: "Refunded", value: money.refundedCents },
+          { label: "Fees retained", value: money.feesRetainedCents },
+          { label: "Net held", value: money.netHeldCents },
+        ].map((stat) => (
+          <div key={stat.label} className="rounded-lg border border-[#30363d] bg-[#161b22] p-3">
+            <p className="text-xs text-[#8b949e]">{stat.label}</p>
+            <p className="mt-1 text-lg font-semibold text-white">{formatAud(stat.value)}</p>
+          </div>
+        ))}
+      </div>
 
       {session.closed_out_at ? (
         <p className="mt-4 text-sm text-[#3fb950]">

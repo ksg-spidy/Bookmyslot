@@ -26,7 +26,7 @@ export async function GET(
 
   const { data: bookings, error: be } = await supabase
     .from("bookings")
-    .select("status, waitlist_position, created_at, user_id")
+    .select("id, status, waitlist_position, created_at, user_id")
     .eq("play_session_id", sessionId)
     .order("created_at", { ascending: true });
 
@@ -38,8 +38,33 @@ export async function GET(
   const { data: profiles } = await supabase.from("profiles").select("id, full_name, phone").in("id", userIds);
   const pmap = new Map((profiles ?? []).map((p) => [p.id, p]));
 
+  // Per-booking money from the ledger (RLS: admins can read payment_events).
+  const { data: events } = await supabase
+    .from("payment_events")
+    .select("booking_id, type, amount_cents")
+    .eq("play_session_id", sessionId);
+
+  const paidByBooking = new Map<string, number>();
+  const refundedByBooking = new Map<string, number>();
+  for (const e of events ?? []) {
+    if (!e.booking_id) continue;
+    const map = e.type === "refund" ? refundedByBooking : paidByBooking;
+    map.set(e.booking_id, (map.get(e.booking_id) ?? 0) + e.amount_cents);
+  }
+
   const escape = (s: string) => `"${String(s).replace(/"/g, '""')}"`;
-  const lines = [["full_name", "phone", "status", "waitlist_position", "created_at", "user_id"].join(",")];
+  const lines = [
+    [
+      "full_name",
+      "phone",
+      "status",
+      "waitlist_position",
+      "paid_cents",
+      "refunded_cents",
+      "created_at",
+      "user_id",
+    ].join(","),
+  ];
 
   for (const b of bookings ?? []) {
     const p = pmap.get(b.user_id);
@@ -49,6 +74,8 @@ export async function GET(
         escape(p?.phone ?? ""),
         escape(b.status),
         b.waitlist_position ?? "",
+        paidByBooking.get(b.id) ?? 0,
+        refundedByBooking.get(b.id) ?? 0,
         escape(new Date(b.created_at).toISOString()),
         escape(b.user_id),
       ].join(",")
