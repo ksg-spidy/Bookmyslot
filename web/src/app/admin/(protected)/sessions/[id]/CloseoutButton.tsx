@@ -19,22 +19,22 @@ export function CloseoutButton({ playSessionId }: { playSessionId: string }) {
   }
 
   return (
-    <div className="mt-4 rounded-lg border border-[#30363d] bg-[#161b22] p-4 text-sm">
+    <div className="mt-4 rounded-lg border border-edge bg-card p-4 text-sm">
       <p className="text-white">Session has started.</p>
-      <p className="mt-1 text-[#8b949e]">
+      <p className="mt-1 text-muted">
         Close out refunds every remaining waitlisted player in full and marks the session done.
       </p>
       <button
         type="button"
         disabled={pending}
         onClick={() => void onClick()}
-        className="mt-3 rounded-lg bg-[#238636] px-4 py-2 font-medium text-white hover:bg-[#2ea043] disabled:opacity-60"
+        className="mt-3 rounded-lg bg-accent px-4 py-2 font-medium text-white hover:bg-accent-hover disabled:opacity-60"
       >
         {pending ? "Closing out…" : "Close out session"}
       </button>
       {result ? (
         <p
-          className={`mt-2 ${result.ok ? "text-[#3fb950]" : "text-red-400"}`}
+          className={`mt-2 ${result.ok ? "text-success" : "text-red-400"}`}
           role={result.ok ? "status" : "alert"}
         >
           {result.message}

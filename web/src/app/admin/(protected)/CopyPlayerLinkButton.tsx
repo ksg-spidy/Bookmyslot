@@ -18,7 +18,7 @@ export function CopyPlayerLinkButton({ sessionId }: { sessionId: string }) {
   }
 
   return (
-    <button type="button" onClick={onCopy} className="text-xs text-[#58a6ff] hover:underline">
+    <button type="button" onClick={onCopy} className="text-xs text-link hover:underline">
       {copied ? "Copied!" : "Copy player link"}
     </button>
   );

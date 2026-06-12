@@ -7,11 +7,11 @@ export const metadata = {
 export default function RefundPage() {
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
-        <Link href="/" className="text-sm text-[#58a6ff] hover:underline">
+        <Link href="/" className="text-sm text-link hover:underline">
           ← Home
         </Link>
         <h1 className="mt-4 text-2xl font-semibold text-white">Refunds &amp; cancellation</h1>
-        <div className="mt-6 space-y-4 text-sm text-[#e6edf3]">
+        <div className="mt-6 space-y-4 text-sm text-ink">
           <p>
             When you book a session, you pay the booking fee shown on the session page. If you cancel
             (withdraw) before the session starts and while booking is still open, a partial refund is
@@ -29,7 +29,7 @@ export default function RefundPage() {
           <p>
             Refunds typically appear on your card within 5–10 business days, depending on your bank.
           </p>
-          <p className="text-[#8b949e]">
+          <p className="text-muted">
             For payment issues after cancelling, contact the organiser with your booking details and
             Stripe receipt.
           </p>

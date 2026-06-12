@@ -24,7 +24,7 @@ export default async function BrowsePage() {
     return (
       <div>
         <h1 className="text-xl font-semibold text-white">Open sessions</h1>
-        <p className="mt-2 text-[#8b949e]">No sessions accepting bookings right now. Check back later.</p>
+        <p className="mt-2 text-muted">No sessions accepting bookings right now. Check back later.</p>
       </div>
     );
   }
@@ -34,9 +34,9 @@ export default async function BrowsePage() {
   return (
     <div>
       <h1 className="text-xl font-semibold text-white">Open sessions</h1>
-      <p className="mt-1 text-sm text-[#8b949e]">
+      <p className="mt-1 text-sm text-muted">
         View times and availability without signing in.{" "}
-        <Link href="/login" className="text-[#58a6ff] hover:underline">
+        <Link href="/login" className="text-link hover:underline">
           Sign in
         </Link>{" "}
         to book.

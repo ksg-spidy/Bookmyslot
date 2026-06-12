@@ -50,7 +50,7 @@ export default async function SessionDetailPage({ params, searchParams }: Props)
 
   return (
     <div>
-      <Link href="/sessions" className="text-sm text-[#58a6ff] hover:underline">
+      <Link href="/sessions" className="text-sm text-link hover:underline">
         ← All sessions
       </Link>
 
@@ -63,10 +63,10 @@ export default async function SessionDetailPage({ params, searchParams }: Props)
       ) : null}
 
       {sp.canceled === "1" ? (
-        <p className="mt-4 text-sm text-[#f0c93a]">Checkout canceled — you can try again when ready.</p>
+        <p className="mt-4 text-sm text-warn">Checkout canceled — you can try again when ready.</p>
       ) : null}
 
-      <div className="mt-8 border-t border-[#30363d] pt-6">
+      <div className="mt-8 border-t border-edge pt-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-lg font-medium text-white">Your booking</h2>
           {booking &&

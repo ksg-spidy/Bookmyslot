@@ -21,20 +21,27 @@ export function ProfileForm({
 
   return (
     <form action={formAction} className="mt-4 grid max-w-md gap-3">
-      <label className="text-xs uppercase text-[#8b949e]">Display name</label>
+      <label htmlFor="profile-full-name" className="text-xs uppercase text-muted">
+        Display name
+      </label>
       <input
+        id="profile-full-name"
         name="full_name"
         defaultValue={defaultName}
-        className="rounded-lg border border-[#30363d] bg-[#161b22] px-3 py-2 text-white outline-none focus:border-[#58a6ff]"
+        className="rounded-lg border border-edge bg-card px-3 py-2 text-white outline-none focus:border-link"
         placeholder="Alex Chen"
         autoComplete="name"
       />
 
-      <label className="text-xs uppercase text-[#8b949e]">Phone</label>
+      <label htmlFor="profile-phone" className="text-xs uppercase text-muted">
+        Phone
+      </label>
       <input
+        id="profile-phone"
         name="phone"
+        type="tel"
         defaultValue={defaultPhone}
-        className="rounded-lg border border-[#30363d] bg-[#161b22] px-3 py-2 text-white outline-none focus:border-[#58a6ff]"
+        className="rounded-lg border border-edge bg-card px-3 py-2 text-white outline-none focus:border-link"
         placeholder="04xx xxx xxx"
         autoComplete="tel"
       />
@@ -42,13 +49,21 @@ export function ProfileForm({
       <button
         type="submit"
         disabled={pending}
-        className="mt-1 rounded-lg bg-[#238636] px-4 py-2 font-medium text-white hover:bg-[#2ea043] disabled:opacity-60"
+        className="mt-1 rounded-lg bg-accent px-4 py-2 font-medium text-white hover:bg-accent-hover disabled:opacity-60"
       >
         {pending ? "Saving…" : "Save profile"}
       </button>
 
-      {state?.error ? <p className="text-sm text-red-400">{state.error}</p> : null}
-      {state?.ok ? <p className="text-sm text-[#3fb950]">Saved.</p> : null}
+      {state?.error ? (
+        <p className="text-sm text-red-400" role="alert">
+          {state.error}
+        </p>
+      ) : null}
+      {state?.ok ? (
+        <p className="text-sm text-success" role="status">
+          Saved.
+        </p>
+      ) : null}
     </form>
   );
 }

@@ -126,7 +126,7 @@ export function YourBooking({
       <div className="mt-2">
         {justPaid ? (
           <p
-            className="mb-2 rounded-lg border border-[#238636] bg-[#0c2218] p-3 text-sm text-[#3fb950]"
+            className="mb-2 rounded-lg border border-accent bg-success-soft p-3 text-sm text-success"
             role="status"
           >
             Payment received — you are{" "}
@@ -142,7 +142,7 @@ export function YourBooking({
           </strong>
         </p>
         {active.status === "waitlist" ? (
-          <p className="mt-2 text-xs text-[#8b949e]">{WAITLIST_AFTER_BOOK_MESSAGE}</p>
+          <p className="mt-2 text-xs text-muted">{WAITLIST_AFTER_BOOK_MESSAGE}</p>
         ) : null}
         <WithdrawButton
           sessionId={sessionId}
@@ -158,7 +158,7 @@ export function YourBooking({
   if (confirming) {
     return (
       <div className="mt-3 space-y-2 text-sm" role="status" aria-live="polite">
-        <p className="rounded-lg border border-[#238636] bg-[#0c2218] p-3 text-[#3fb950]">
+        <p className="rounded-lg border border-accent bg-success-soft p-3 text-success">
           Payment received — saving your booking now. This usually takes a few seconds.
         </p>
         {syncError ? (
@@ -166,7 +166,7 @@ export function YourBooking({
             <p className="text-red-400">{syncError}</p>
             <button
               type="button"
-              className="text-[#58a6ff] hover:underline"
+              className="text-link hover:underline"
               onClick={() => {
                 void syncBookingAfterPayment(sessionId, stripeCheckoutSessionId).then((res) => {
                   if (res.synced) {
@@ -194,7 +194,7 @@ export function YourBooking({
         </p>
         <button
           type="button"
-          className="text-[#58a6ff] hover:underline"
+          className="text-link hover:underline"
           onClick={() => {
             setConfirming(true);
             setSyncError(null);
@@ -212,9 +212,9 @@ export function YourBooking({
   if (open) {
     if (!profileComplete) {
       return (
-        <p className="mt-3 text-sm text-[#8b949e]">
+        <p className="mt-3 text-sm text-muted">
           Complete your{" "}
-          <Link href="/sessions/settings" className="text-[#58a6ff] hover:underline">
+          <Link href="/sessions/settings" className="text-link hover:underline">
             profile
           </Link>{" "}
           to enable booking.
@@ -233,5 +233,5 @@ export function YourBooking({
     );
   }
 
-  return <p className="mt-3 text-sm text-[#8b949e]">Booking is not open for this session.</p>;
+  return <p className="mt-3 text-sm text-muted">Booking is not open for this session.</p>;
 }

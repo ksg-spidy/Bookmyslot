@@ -36,21 +36,21 @@ export function SessionCard({
   return (
     <Link
       href={href}
-      className="block rounded-lg border border-[#30363d] bg-[#161b22] p-4 transition hover:border-[#58a6ff]"
+      className="block rounded-lg border border-edge bg-card p-4 transition hover:border-link"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="font-medium text-white">{session.title}</div>
         <span
           className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
-            full ? "bg-[#3d2a00] text-[#f0c93a]" : "bg-[#0c2218] text-[#3fb950]"
+            full ? "bg-warn-soft text-warn" : "bg-success-soft text-success"
           }`}
         >
           {full ? "Full" : `${counts.spotsRemaining} left`}
         </span>
       </div>
-      <div className="mt-1 text-sm text-[#8b949e]">{session.venue}</div>
+      <div className="mt-1 text-sm text-muted">{session.venue}</div>
       <div className="mt-2 text-sm text-white">{formatSessionRange(session.starts_at, session.ends_at)}</div>
-      <div className="mt-2 text-xs text-[#8b949e]">
+      <div className="mt-2 text-xs text-muted">
         {formatAud(session.booking_fee_cents)} · {spotsLabel(counts, session.max_players)} · booking closes{" "}
         {formatSessionDateTime(session.booking_closes_at)}
       </div>

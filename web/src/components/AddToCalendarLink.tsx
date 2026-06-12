@@ -3,7 +3,7 @@ export function AddToCalendarLink({ sessionId }: { sessionId: string }) {
   return (
     <a
       href={href}
-      className="inline-flex items-center text-sm text-[#58a6ff] hover:underline"
+      className="inline-flex items-center text-sm text-link hover:underline"
       download
     >
       Add to calendar (.ics)

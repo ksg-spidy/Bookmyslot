@@ -34,17 +34,17 @@ export default async function BrowseSessionPage({ params }: Props) {
 
   return (
     <div>
-      <Link href="/browse" className="text-sm text-[#58a6ff] hover:underline">
+      <Link href="/browse" className="text-sm text-link hover:underline">
         ← All sessions
       </Link>
 
       <SessionDetailBody session={session} counts={counts} />
 
-      <div className="mt-8 border-t border-[#30363d] pt-6">
+      <div className="mt-8 border-t border-edge pt-6">
         {user ? (
           <Link
             href={`/sessions/${id}`}
-            className="inline-block rounded-lg bg-[#238636] px-4 py-2 font-medium text-white hover:bg-[#2ea043]"
+            className="inline-block rounded-lg bg-accent px-4 py-2 font-medium text-white hover:bg-accent-hover"
           >
             {bookLabel}
           </Link>
@@ -52,17 +52,17 @@ export default async function BrowseSessionPage({ params }: Props) {
           <div className="space-y-2">
             <Link
               href={`/login?next=${encodeURIComponent(`/sessions/${id}`)}`}
-              className="inline-block rounded-lg bg-[#238636] px-4 py-2 font-medium text-white hover:bg-[#2ea043]"
+              className="inline-block rounded-lg bg-accent px-4 py-2 font-medium text-white hover:bg-accent-hover"
             >
               {getBrowseGuestCtaLabel({
                 spotsRemaining: counts.spotsRemaining,
                 bookingFeeCents: session.booking_fee_cents as number,
               })}
             </Link>
-            <p className="text-xs text-[#8b949e]">Magic-link sign-in — no password.</p>
+            <p className="text-xs text-muted">Magic-link sign-in — no password.</p>
           </div>
         ) : (
-          <p className="text-sm text-[#8b949e]">Booking is closed for this session.</p>
+          <p className="text-sm text-muted">Booking is closed for this session.</p>
         )}
       </div>
     </div>

@@ -3,7 +3,7 @@
 import { withdrawPlayerBooking } from "@/app/actions/withdrawBooking";
 import { formatAud } from "@/lib/money";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function WithdrawButton({
   sessionId,
@@ -24,6 +24,22 @@ export function WithdrawButton({
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const confirmButtonRef = useRef<HTMLButtonElement>(null);
+  const triggerButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Move keyboard focus into the confirm dialog when it opens, and back to
+  // the trigger when it closes, so the flow is operable without a mouse.
+  // prevPhaseRef stops the effect from stealing focus on first render.
+  const prevPhaseRef = useRef(phase);
+  useEffect(() => {
+    const prev = prevPhaseRef.current;
+    prevPhaseRef.current = phase;
+    if (phase === "confirm") {
+      confirmButtonRef.current?.focus();
+    } else if (prev === "confirm") {
+      triggerButtonRef.current?.focus();
+    }
+  }, [phase]);
 
   const effectiveFeeCents = isWaitlist ? 0 : withdrawalFeeCents;
   const refundCents = Math.max(0, bookingFeeCents - effectiveFeeCents);
@@ -49,9 +65,9 @@ export function WithdrawButton({
 
   if (phase === "confirm") {
     return (
-      <div className="mt-4 space-y-3 rounded-lg border border-[#30363d] bg-[#161b22] p-4 text-sm">
+      <div className="mt-4 space-y-3 rounded-lg border border-edge bg-card p-4 text-sm">
         <p className="text-white">Withdraw from this session?</p>
-        <p className="text-[#8b949e]">
+        <p className="text-muted">
           {isWaitlist ? (
             <>
               You are on the waitlist, so there is no withdrawal fee. Refund to your card:{" "}
@@ -66,6 +82,7 @@ export function WithdrawButton({
         </p>
         <div className="flex flex-wrap gap-3">
           <button
+            ref={confirmButtonRef}
             type="button"
             disabled={pending}
             onClick={() => void onConfirm()}
@@ -80,7 +97,7 @@ export function WithdrawButton({
               setPhase("idle");
               setError(null);
             }}
-            className="text-[#58a6ff] hover:underline"
+            className="text-link hover:underline"
           >
             Keep my spot
           </button>
@@ -97,11 +114,12 @@ export function WithdrawButton({
   return (
     <div className="mt-4">
       {message ? (
-        <p className="mb-2 text-sm text-[#3fb950]" role="status">
+        <p className="mb-2 text-sm text-success" role="status">
           {message}
         </p>
       ) : null}
       <button
+        ref={triggerButtonRef}
         type="button"
         onClick={() => setPhase("confirm")}
         className="text-sm text-red-400 hover:underline"

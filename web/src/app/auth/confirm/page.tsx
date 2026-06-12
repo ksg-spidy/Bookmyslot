@@ -72,7 +72,7 @@ function ConfirmInner() {
         <p className="mb-4 text-sm text-red-400" role="alert">
           {authLinkErrorMessage(hashError.errorCode, hashError.errorDescription)}
         </p>
-        <Link href="/login" className="text-sm text-[#58a6ff] hover:underline">
+        <Link href="/login" className="text-sm text-link hover:underline">
           Back to sign in
         </Link>
       </div>
@@ -86,7 +86,7 @@ function ConfirmInner() {
         <p className="mb-4 text-sm text-red-400" role="alert">
           This sign-in link is incomplete. Request a new link from the login page.
         </p>
-        <Link href="/login" className="text-sm text-[#58a6ff] hover:underline">
+        <Link href="/login" className="text-sm text-link hover:underline">
           Go to login
         </Link>
       </div>
@@ -96,16 +96,16 @@ function ConfirmInner() {
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">
       <h1 className="mb-2 text-2xl font-semibold text-white">ShuttleBook</h1>
-      <p className="mb-4 text-sm text-[#8b949e]">
+      <p className="mb-4 text-sm text-muted">
         You opened a sign-in link for ShuttleBook. Click below to finish signing in — this step
         prevents email apps from using the link before you do.
       </p>
-      <p className="mb-6 rounded-lg border border-[#30363d] bg-[#161b22] px-3 py-2 text-xs text-[#8b949e]">
+      <p className="mb-6 rounded-lg border border-edge bg-card px-3 py-2 text-xs text-muted">
         After sign-in you will go to {destinationLabel}
         {nextPath !== "/" ? (
           <>
             {" "}
-            (<span className="text-[#e6edf3]">{nextPath}</span>)
+            (<span className="text-ink">{nextPath}</span>)
           </>
         ) : null}
         .
@@ -119,14 +119,14 @@ function ConfirmInner() {
         type="button"
         disabled={pending}
         onClick={handleComplete}
-        className="rounded-lg bg-[#238636] py-3 text-center font-medium text-white hover:bg-[#2ea043] disabled:opacity-60"
+        className="rounded-lg bg-accent py-3 text-center font-medium text-white hover:bg-accent-hover disabled:opacity-60"
       >
         {pending ? "Signing in…" : "Complete sign-in"}
       </button>
-      <p className="mt-4 text-xs text-[#8b949e]">
+      <p className="mt-4 text-xs text-muted">
         Link expires in 1 hour. Use the same browser where you requested the email when possible.
       </p>
-      <Link href="/login" className="mt-6 text-sm text-[#58a6ff] hover:underline">
+      <Link href="/login" className="mt-6 text-sm text-link hover:underline">
         Request a new link
       </Link>
     </div>
@@ -137,7 +137,7 @@ export default function AuthConfirmPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 text-[#8b949e]">
+        <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 text-muted">
           Loading…
         </div>
       }

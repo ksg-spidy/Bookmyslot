@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function SiteFooter() {
   return (
-    <footer className="mt-auto border-t border-[#30363d] px-4 py-6 text-center text-xs text-[#8b949e]">
+    <footer className="mt-auto border-t border-edge px-4 py-6 text-center text-xs text-muted">
       <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
         <Link href="/privacy" className="hover:text-white hover:underline">
           Privacy

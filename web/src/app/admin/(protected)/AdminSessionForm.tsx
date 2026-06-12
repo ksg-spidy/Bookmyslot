@@ -8,7 +8,7 @@ type State = { error?: string; ok?: boolean };
 const initial: State = {};
 
 const inp =
-  "rounded-lg border border-[#30363d] bg-[#161b22] px-3 py-2 text-white outline-none focus:border-[#58a6ff]";
+  "rounded-lg border border-edge bg-card px-3 py-2 text-white outline-none focus:border-link";
 
 export function AdminSessionForm({ timezoneLabel }: { timezoneLabel: string }) {
   const [state, formAction, pending] = useActionState(async (_prev: State, formData: FormData) => {
@@ -21,29 +21,29 @@ export function AdminSessionForm({ timezoneLabel }: { timezoneLabel: string }) {
 
   return (
     <form action={formAction} className="mt-4 grid max-w-xl gap-3">
-      <label className="text-xs uppercase text-[#8b949e]">Title</label>
+      <label className="text-xs uppercase text-muted">Title</label>
       <input name="title" defaultValue="Saturday session" className={inp} required />
 
-      <label className="text-xs uppercase text-[#8b949e]">Venue</label>
+      <label className="text-xs uppercase text-muted">Venue</label>
       <input name="venue" placeholder="Northside Sports Hall" className={inp} required />
 
-      <p className="text-xs text-[#8b949e]">
+      <p className="text-xs text-muted">
         Enter start, end, and booking-close times in your club&apos;s local time ({timezoneLabel}).
       </p>
 
-      <label className="text-xs uppercase text-[#8b949e]">Starts (local)</label>
+      <label className="text-xs uppercase text-muted">Starts (local)</label>
       <input name="starts_at" type="datetime-local" className={inp} required />
 
-      <label className="text-xs uppercase text-[#8b949e]">Ends (local)</label>
+      <label className="text-xs uppercase text-muted">Ends (local)</label>
       <input name="ends_at" type="datetime-local" className={inp} required />
 
-      <label className="text-xs uppercase text-[#8b949e]">Booking closes (local)</label>
+      <label className="text-xs uppercase text-muted">Booking closes (local)</label>
       <input name="booking_closes_at" type="datetime-local" className={inp} required />
 
-      <label className="text-xs uppercase text-[#8b949e]">Max players (13–16)</label>
+      <label className="text-xs uppercase text-muted">Max players (13–16)</label>
       <input name="max_players" type="number" min={13} max={16} defaultValue={16} className={inp} required />
 
-      <label className="text-xs uppercase text-[#8b949e]">Booking fee (AUD)</label>
+      <label className="text-xs uppercase text-muted">Booking fee (AUD)</label>
       <input
         name="booking_fee_aud"
         type="text"
@@ -53,7 +53,7 @@ export function AdminSessionForm({ timezoneLabel }: { timezoneLabel: string }) {
         required
       />
 
-      <label className="text-xs uppercase text-[#8b949e]">Cancellation fee (AUD)</label>
+      <label className="text-xs uppercase text-muted">Cancellation fee (AUD)</label>
       <input
         name="withdrawal_fee_aud"
         type="text"
@@ -64,12 +64,12 @@ export function AdminSessionForm({ timezoneLabel }: { timezoneLabel: string }) {
       />
 
       {state?.error ? <p className="text-sm text-red-400">{state.error}</p> : null}
-      {state?.ok ? <p className="text-sm text-[#3fb950]">Session created.</p> : null}
+      {state?.ok ? <p className="text-sm text-success">Session created.</p> : null}
 
       <button
         type="submit"
         disabled={pending}
-        className="mt-2 rounded-lg bg-[#238636] px-4 py-2 font-medium text-white hover:bg-[#2ea043] disabled:opacity-60"
+        className="mt-2 rounded-lg bg-accent px-4 py-2 font-medium text-white hover:bg-accent-hover disabled:opacity-60"
       >
         {pending ? "Creating…" : "Create session"}
       </button>

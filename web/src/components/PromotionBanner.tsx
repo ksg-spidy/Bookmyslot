@@ -34,7 +34,7 @@ export function PromotionBanner({
 
   return (
     <div
-      className="mt-4 flex items-start justify-between gap-3 rounded-lg border border-[#238636] bg-[#0c2218] p-3 text-sm text-[#3fb950]"
+      className="mt-4 flex items-start justify-between gap-3 rounded-lg border border-accent bg-success-soft p-3 text-sm text-success"
       role="status"
     >
       <p>
@@ -42,7 +42,7 @@ export function PromotionBanner({
       </p>
       <button
         type="button"
-        className="shrink-0 text-xs text-[#8b949e] hover:text-white"
+        className="shrink-0 text-xs text-muted hover:text-white"
         onClick={() => {
           localStorage.setItem(dismissKey(bookingId), "1");
           setVisible(false);

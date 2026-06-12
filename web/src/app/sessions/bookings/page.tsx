@@ -130,7 +130,7 @@ export default async function MyBookingsPage() {
     showWithdraw?: boolean;
   }) {
     if (!rows.length) {
-      return <p className="mt-2 text-sm text-[#8b949e]">{empty}</p>;
+      return <p className="mt-2 text-sm text-muted">{empty}</p>;
     }
     return (
       <ul className="mt-3 space-y-3">
@@ -141,7 +141,7 @@ export default async function MyBookingsPage() {
           return (
             <li
               key={b.id}
-              className="rounded-lg border border-[#30363d] bg-[#161b22] transition hover:border-[#58a6ff]"
+              className="rounded-lg border border-edge bg-card transition hover:border-link"
             >
               {b.promoted_at ? (
                 <div className="p-4 pb-0">
@@ -151,22 +151,22 @@ export default async function MyBookingsPage() {
               <Link href={`/sessions/${s.id}`} className="block p-4">
                 <div className="flex items-start justify-between gap-2">
                   <span className="font-medium text-white">{s.title}</span>
-                  <span className="shrink-0 text-xs capitalize text-[#3fb950]">{b.status}</span>
+                  <span className="shrink-0 text-xs capitalize text-success">{b.status}</span>
                 </div>
-                <p className="mt-1 text-sm text-[#8b949e]">{s.venue}</p>
+                <p className="mt-1 text-sm text-muted">{s.venue}</p>
                 <p className="mt-2 text-sm text-white">
                   {formatSessionRange(s.starts_at, s.ends_at)}
                 </p>
                 {b.status === "waitlist" && b.waitlist_position != null ? (
-                  <p className="mt-1 text-xs text-[#8b949e]">
+                  <p className="mt-1 text-xs text-muted">
                     {formatWaitlistPosition(b.waitlist_position)}
                   </p>
                 ) : null}
-                <p className="mt-2 text-xs text-[#8b949e]">
+                <p className="mt-2 text-xs text-muted">
                   Booked {formatSessionDateTime(b.created_at)}
                 </p>
               </Link>
-              <div className="border-t border-[#30363d] px-4 py-2 space-y-2">
+              <div className="border-t border-edge px-4 py-2 space-y-2">
                 <AddToCalendarLink sessionId={s.id} />
                 {withdraw ? (
                   <WithdrawButton
@@ -188,7 +188,7 @@ export default async function MyBookingsPage() {
   return (
     <div>
       <h1 className="text-xl font-semibold text-white">My bookings</h1>
-      <p className="mt-1 text-sm text-[#8b949e]">
+      <p className="mt-1 text-sm text-muted">
         Upcoming sessions you are booked or waitlisted for. Withdraw from here or open a session for
         details.
       </p>
@@ -210,7 +210,7 @@ export default async function MyBookingsPage() {
         <BookingList rows={normalizeBookingRows(past)} empty="No withdrawn bookings." />
       </section>
 
-      <Link href="/sessions" className="mt-8 inline-block text-sm text-[#58a6ff] hover:underline">
+      <Link href="/sessions" className="mt-8 inline-block text-sm text-link hover:underline">
         Browse open sessions →
       </Link>
     </div>

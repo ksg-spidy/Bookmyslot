@@ -48,18 +48,18 @@ function LinkInner() {
     <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">
       <h1 className="mb-2 text-2xl font-semibold text-white">Link WhatsApp</h1>
       {status === "working" ? (
-        <p className="text-sm text-[#8b949e]">Linking your account…</p>
+        <p className="text-sm text-muted">Linking your account…</p>
       ) : null}
       {message ? (
         <p
-          className={`mt-4 text-sm ${status === "error" ? "text-red-400" : "text-[#3fb950]"}`}
+          className={`mt-4 text-sm ${status === "error" ? "text-red-400" : "text-success"}`}
           role="status"
         >
           {message}
         </p>
       ) : null}
       {status === "done" ? (
-        <Link href="/sessions/bookings" className="mt-6 text-sm text-[#58a6ff] hover:underline">
+        <Link href="/sessions/bookings" className="mt-6 text-sm text-link hover:underline">
           View my bookings
         </Link>
       ) : null}
@@ -71,7 +71,7 @@ export default function WhatsAppLinkPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 text-[#8b949e]">
+        <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 text-muted">
           Loading…
         </div>
       }

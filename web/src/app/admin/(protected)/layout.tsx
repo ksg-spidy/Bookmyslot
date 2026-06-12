@@ -17,20 +17,20 @@ export default async function AdminProtectedLayout({
 
   return (
     <div className="min-h-screen">
-      <header className="flex items-center justify-between border-b border-[#30363d] px-4 py-3">
+      <header className="flex items-center justify-between border-b border-edge px-4 py-3">
         <div className="flex gap-4">
           <Link href="/admin" className="font-semibold text-white">
             ShuttleBook Admin
           </Link>
-          <Link href="/admin/stats" className="text-sm text-[#58a6ff] hover:underline">
+          <Link href="/admin/stats" className="text-sm text-link hover:underline">
             Stats
           </Link>
-          <Link href="/sessions" className="text-sm text-[#58a6ff] hover:underline">
+          <Link href="/sessions" className="text-sm text-link hover:underline">
             Player view
           </Link>
         </div>
         <form action="/auth/signout" method="post">
-          <button type="submit" className="text-sm text-[#58a6ff] hover:underline">
+          <button type="submit" className="text-sm text-link hover:underline">
             Sign out
           </button>
         </form>

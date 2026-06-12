@@ -26,7 +26,7 @@ export function SessionDetailBody({
   return (
     <>
       <h1 className="mt-4 text-2xl font-semibold text-white">{session.title}</h1>
-      <p className="mt-2 text-[#8b949e]">
+      <p className="mt-2 text-muted">
         {session.venue}
         {session.venue.trim() ? (
           <>
@@ -36,7 +36,7 @@ export function SessionDetailBody({
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(session.venue)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#58a6ff] hover:underline"
+              className="text-link hover:underline"
             >
               Map
             </a>
@@ -47,7 +47,7 @@ export function SessionDetailBody({
       <p className="mt-3 text-sm text-white">
         <span
           className={`mr-2 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
-            full ? "bg-[#3d2a00] text-[#f0c93a]" : "bg-[#0c2218] text-[#3fb950]"
+            full ? "bg-warn-soft text-warn" : "bg-success-soft text-success"
           }`}
         >
           {full
@@ -55,18 +55,18 @@ export function SessionDetailBody({
             : `${counts.spotsRemaining} of ${session.max_players} spots left`}
         </span>
         {counts.waitlist > 0 ? (
-          <span className="text-[#8b949e]"> · {counts.waitlist} on waitlist</span>
+          <span className="text-muted"> · {counts.waitlist} on waitlist</span>
         ) : null}
       </p>
       <p className="mt-4 text-sm text-white">
         Booking fee: <strong>{formatAud(session.booking_fee_cents)}</strong> · Cancellation fee:{" "}
         <strong>{formatAud(session.withdrawal_fee_cents)}</strong>
       </p>
-      <p className="mt-1 text-sm text-[#8b949e]">
+      <p className="mt-1 text-sm text-muted">
         Booking closes {formatSessionDateTime(session.booking_closes_at)} ({getBookingTimezoneLabel()}
         ). If the session is full, you join the waitlist and pay the same booking fee now. If someone
         withdraws, the next person in line is confirmed automatically.{" "}
-        <Link href="/refund" className="text-[#58a6ff] hover:underline">
+        <Link href="/refund" className="text-link hover:underline">
           Refund policy
         </Link>
         .

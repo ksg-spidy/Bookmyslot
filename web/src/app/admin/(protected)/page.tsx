@@ -118,15 +118,15 @@ export default async function AdminHomePage() {
   return (
     <div className="space-y-10">
       {hasAttentionItems ? (
-        <section className="rounded-lg border border-[#f0c93a]/50 bg-[#161b22] p-4">
-          <h2 className="text-lg font-medium text-[#f0c93a]">Needs attention</h2>
+        <section className="rounded-lg border border-warn/50 bg-card p-4">
+          <h2 className="text-lg font-medium text-warn">Needs attention</h2>
           {attention.stuckWithdrawing.length > 0 ? (
             <div className="mt-3">
               <p className="text-sm text-white">
                 Bookings stuck mid-withdrawal (refund may have been issued but the booking was not
                 finalized):
               </p>
-              <ul className="mt-2 space-y-1 text-sm text-[#8b949e]">
+              <ul className="mt-2 space-y-1 text-sm text-muted">
                 {attention.stuckWithdrawing.map((b) => (
                   <li key={b.bookingId}>
                     {b.sessionTitle} — booking <code className="text-xs">{b.bookingId.slice(0, 8)}</code>,
@@ -141,10 +141,10 @@ export default async function AdminHomePage() {
               <p className="text-sm text-white">
                 Past sessions with paid waitlist players still waiting on a refund:
               </p>
-              <ul className="mt-2 space-y-1 text-sm text-[#8b949e]">
+              <ul className="mt-2 space-y-1 text-sm text-muted">
                 {attention.unclosedSessions.map((s) => (
                   <li key={s.id}>
-                    <Link href={`/admin/sessions/${s.id}`} className="text-[#58a6ff] hover:underline">
+                    <Link href={`/admin/sessions/${s.id}`} className="text-link hover:underline">
                       {s.title}
                     </Link>{" "}
                     — started {new Date(s.startsAt).toLocaleString()}, {s.waitlistCount} waitlisted.
@@ -159,7 +159,7 @@ export default async function AdminHomePage() {
               <p className="text-sm text-white">
                 Failed player notifications (the player may not know their booking changed):
               </p>
-              <ul className="mt-2 space-y-1 text-sm text-[#8b949e]">
+              <ul className="mt-2 space-y-1 text-sm text-muted">
                 {attention.failedNotifications.map((f) => (
                   <li key={f.id}>
                     [{f.channel}] {f.kind} to {f.recipient ?? "unknown"} —{" "}
@@ -175,7 +175,7 @@ export default async function AdminHomePage() {
 
       <section>
         <h1 className="text-2xl font-semibold text-white">Sessions</h1>
-        <p className="mt-1 text-sm text-[#8b949e]">Create a slot, then share the player link after sign-in.</p>
+        <p className="mt-1 text-sm text-muted">Create a slot, then share the player link after sign-in.</p>
 
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
@@ -184,8 +184,8 @@ export default async function AdminHomePage() {
             { label: "Fees retained", value: totals.feesRetained },
             { label: "Net held", value: totals.netHeld },
           ].map((stat) => (
-            <div key={stat.label} className="rounded-lg border border-[#30363d] bg-[#161b22] p-3">
-              <p className="text-xs text-[#8b949e]">{stat.label}</p>
+            <div key={stat.label} className="rounded-lg border border-edge bg-card p-3">
+              <p className="text-xs text-muted">{stat.label}</p>
               <p className="mt-1 text-lg font-semibold text-white">{formatAud(stat.value)}</p>
             </div>
           ))}
@@ -194,9 +194,9 @@ export default async function AdminHomePage() {
         {error ? (
           <p className="mt-4 text-sm text-red-400">{error.message}</p>
         ) : (
-          <div className="mt-4 overflow-x-auto rounded-lg border border-[#30363d]">
+          <div className="mt-4 overflow-x-auto rounded-lg border border-edge">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-[#30363d] bg-[#161b22] text-[#8b949e]">
+              <thead className="border-b border-edge bg-card text-muted">
                 <tr>
                   <th className="p-3">Title</th>
                   <th className="p-3">Starts</th>
@@ -206,12 +206,12 @@ export default async function AdminHomePage() {
               </thead>
               <tbody>
                 {sessions?.map((s) => (
-                  <tr key={s.id} className="border-b border-[#21262d]">
+                  <tr key={s.id} className="border-b border-edge-soft">
                     <td className="p-3 text-white">{s.title}</td>
-                    <td className="p-3 text-[#8b949e]">{new Date(s.starts_at).toLocaleString()}</td>
-                    <td className="p-3 capitalize text-[#8b949e]">{s.status}</td>
+                    <td className="p-3 text-muted">{new Date(s.starts_at).toLocaleString()}</td>
+                    <td className="p-3 capitalize text-muted">{s.status}</td>
                     <td className="p-3 space-y-1">
-                      <Link href={`/admin/sessions/${s.id}`} className="text-[#58a6ff] hover:underline">
+                      <Link href={`/admin/sessions/${s.id}`} className="text-link hover:underline">
                         Bookings
                       </Link>
                       <div>
@@ -228,7 +228,7 @@ export default async function AdminHomePage() {
                       {s.status === "locked" ? (
                         <form className="inline-block" action={unlockPlaySessionForm}>
                           <input type="hidden" name="id" value={s.id} />
-                          <button type="submit" className="text-xs text-[#3fb950] hover:underline">
+                          <button type="submit" className="text-xs text-success hover:underline">
                             Unlock slot
                           </button>
                         </form>
@@ -239,7 +239,7 @@ export default async function AdminHomePage() {
               </tbody>
             </table>
             {!sessions?.length ? (
-              <p className="p-4 text-sm text-[#8b949e]">No sessions yet — create one below.</p>
+              <p className="p-4 text-sm text-muted">No sessions yet — create one below.</p>
             ) : null}
           </div>
         )}

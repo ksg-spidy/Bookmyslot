@@ -90,11 +90,11 @@ export default async function AdminStatsPage() {
   return (
     <div className="space-y-10">
       <div>
-        <Link href="/admin" className="text-sm text-[#58a6ff] hover:underline">
+        <Link href="/admin" className="text-sm text-link hover:underline">
           ← Admin
         </Link>
         <h1 className="mt-4 text-2xl font-semibold text-white">Stats</h1>
-        <p className="mt-1 text-sm text-[#8b949e]">
+        <p className="mt-1 text-sm text-muted">
           Paid bookings only (confirmed, waitlisted, or later withdrawn). Last 12 weeks.
         </p>
       </div>
@@ -102,29 +102,29 @@ export default async function AdminStatsPage() {
       <section>
         <h2 className="text-lg font-medium text-white">Channel split</h2>
         {totalBookings === 0 ? (
-          <p className="mt-2 text-sm text-[#8b949e]">No bookings in the last 12 weeks.</p>
+          <p className="mt-2 text-sm text-muted">No bookings in the last 12 weeks.</p>
         ) : (
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <div className="rounded-lg border border-[#30363d] bg-[#161b22] p-3">
-              <p className="text-xs text-[#8b949e]">Website</p>
+            <div className="rounded-lg border border-edge bg-card p-3">
+              <p className="text-xs text-muted">Website</p>
               <p className="mt-1 text-lg font-semibold text-white">
                 {webCount}{" "}
-                <span className="text-sm font-normal text-[#8b949e]">
+                <span className="text-sm font-normal text-muted">
                   ({Math.round((webCount / totalBookings) * 100)}%)
                 </span>
               </p>
             </div>
-            <div className="rounded-lg border border-[#30363d] bg-[#161b22] p-3">
-              <p className="text-xs text-[#8b949e]">WhatsApp</p>
+            <div className="rounded-lg border border-edge bg-card p-3">
+              <p className="text-xs text-muted">WhatsApp</p>
               <p className="mt-1 text-lg font-semibold text-white">
                 {whatsappCount}{" "}
-                <span className="text-sm font-normal text-[#8b949e]">
+                <span className="text-sm font-normal text-muted">
                   ({Math.round((whatsappCount / totalBookings) * 100)}%)
                 </span>
               </p>
             </div>
-            <div className="rounded-lg border border-[#30363d] bg-[#161b22] p-3">
-              <p className="text-xs text-[#8b949e]">Total</p>
+            <div className="rounded-lg border border-edge bg-card p-3">
+              <p className="text-xs text-muted">Total</p>
               <p className="mt-1 text-lg font-semibold text-white">{totalBookings}</p>
             </div>
           </div>
@@ -134,11 +134,11 @@ export default async function AdminStatsPage() {
       <section>
         <h2 className="text-lg font-medium text-white">Weekly active bookers</h2>
         {weeks.length === 0 ? (
-          <p className="mt-2 text-sm text-[#8b949e]">No data yet.</p>
+          <p className="mt-2 text-sm text-muted">No data yet.</p>
         ) : (
-          <div className="mt-3 overflow-x-auto rounded-lg border border-[#30363d]">
+          <div className="mt-3 overflow-x-auto rounded-lg border border-edge">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-[#30363d] bg-[#161b22] text-[#8b949e]">
+              <thead className="border-b border-edge bg-card text-muted">
                 <tr>
                   <th className="p-3">Week</th>
                   <th className="p-3">Distinct bookers</th>
@@ -146,9 +146,9 @@ export default async function AdminStatsPage() {
               </thead>
               <tbody>
                 {weeks.map((w) => (
-                  <tr key={w.week} className="border-b border-[#21262d]">
+                  <tr key={w.week} className="border-b border-edge-soft">
                     <td className="p-3 text-white">{w.week}</td>
-                    <td className="p-3 text-[#8b949e]">{w.bookers}</td>
+                    <td className="p-3 text-muted">{w.bookers}</td>
                   </tr>
                 ))}
               </tbody>
@@ -159,9 +159,9 @@ export default async function AdminStatsPage() {
 
       <section>
         <h2 className="text-lg font-medium text-white">Fill rate (last 20 sessions)</h2>
-        <div className="mt-3 overflow-x-auto rounded-lg border border-[#30363d]">
+        <div className="mt-3 overflow-x-auto rounded-lg border border-edge">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-[#30363d] bg-[#161b22] text-[#8b949e]">
+            <thead className="border-b border-edge bg-card text-muted">
               <tr>
                 <th className="p-3">Session</th>
                 <th className="p-3">Starts</th>
@@ -175,29 +175,29 @@ export default async function AdminStatsPage() {
                 const max = (s.max_players as number) || 1;
                 const pct = Math.round((confirmed / max) * 100);
                 return (
-                  <tr key={s.id as string} className="border-b border-[#21262d]">
+                  <tr key={s.id as string} className="border-b border-edge-soft">
                     <td className="p-3 text-white">
                       <Link
                         href={`/admin/sessions/${s.id}`}
-                        className="text-[#58a6ff] hover:underline"
+                        className="text-link hover:underline"
                       >
                         {s.title as string}
                       </Link>
                     </td>
-                    <td className="p-3 text-[#8b949e]">
+                    <td className="p-3 text-muted">
                       {new Date(s.starts_at as string).toLocaleString()}
                     </td>
-                    <td className="p-3 text-[#8b949e]">
+                    <td className="p-3 text-muted">
                       {confirmed} / {s.max_players as number}
                     </td>
-                    <td className="p-3 text-[#8b949e]">{pct}%</td>
+                    <td className="p-3 text-muted">{pct}%</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
           {!(sessions ?? []).length ? (
-            <p className="p-4 text-sm text-[#8b949e]">No sessions yet.</p>
+            <p className="p-4 text-sm text-muted">No sessions yet.</p>
           ) : null}
         </div>
       </section>

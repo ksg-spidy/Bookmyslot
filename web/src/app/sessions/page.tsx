@@ -21,8 +21,8 @@ export default async function SessionsPage() {
     return (
       <div>
         <h1 className="text-xl font-semibold text-white">Open sessions</h1>
-        <p className="mt-2 text-[#8b949e]">No sessions accepting bookings right now.</p>
-        <Link href="/browse" className="mt-4 inline-block text-sm text-[#58a6ff] hover:underline">
+        <p className="mt-2 text-muted">No sessions accepting bookings right now.</p>
+        <Link href="/browse" className="mt-4 inline-block text-sm text-link hover:underline">
           Public session list
         </Link>
       </div>
@@ -35,7 +35,7 @@ export default async function SessionsPage() {
   return (
     <div>
       <h1 className="text-xl font-semibold text-white">Open sessions</h1>
-      <p className="mt-1 text-sm text-[#8b949e]">Choose a session to view details and book.</p>
+      <p className="mt-1 text-sm text-muted">Choose a session to view details and book.</p>
       <ul className="mt-6 space-y-3">
         {rows.map((s) => (
           <li key={s.id}>

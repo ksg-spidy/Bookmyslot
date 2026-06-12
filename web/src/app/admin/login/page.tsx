@@ -50,42 +50,48 @@ function AdminLoginInner() {
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">
       <h1 className="mb-2 text-2xl font-semibold text-white">ShuttleBook Admin</h1>
-      <p className="mb-6 text-sm text-[#8b949e]">Sign in with your admin email and password.</p>
+      <p className="mb-6 text-sm text-muted">Sign in with your admin email and password.</p>
       <form onSubmit={signIn} className="flex flex-col gap-3">
-        <label className="text-xs uppercase tracking-wide text-[#8b949e]">Email</label>
+        <label htmlFor="admin-email" className="text-xs uppercase tracking-wide text-muted">
+          Email
+        </label>
         <input
+          id="admin-email"
           type="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="rounded-lg border border-[#30363d] bg-[#161b22] px-3 py-2 text-white outline-none focus:border-[#58a6ff]"
+          className="rounded-lg border border-edge bg-card px-3 py-2 text-white outline-none focus:border-link"
           placeholder="admin@example.com"
           autoComplete="email"
         />
-        <label className="text-xs uppercase tracking-wide text-[#8b949e]">Password</label>
+        <label htmlFor="admin-password" className="text-xs uppercase tracking-wide text-muted">
+          Password
+        </label>
         <input
+          id="admin-password"
           type="password"
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="rounded-lg border border-[#30363d] bg-[#161b22] px-3 py-2 text-white outline-none focus:border-[#58a6ff]"
+          className="rounded-lg border border-edge bg-card px-3 py-2 text-white outline-none focus:border-link"
           autoComplete="current-password"
         />
         <button
           type="submit"
           disabled={status === "signing"}
-          className="rounded-lg bg-[#238636] py-2 font-medium text-white hover:bg-[#2ea043] disabled:opacity-60"
+          className="rounded-lg bg-accent py-2 font-medium text-white hover:bg-accent-hover disabled:opacity-60"
         >
           {status === "signing" ? "Signing in…" : "Sign in"}
         </button>
       </form>
       {message ? (
-        <p className="mt-4 text-sm text-red-400" role="status">
+        <p className="mt-4 text-sm text-red-400" role="alert">
           {message}
         </p>
       ) : null}
-      <p className="mt-6 text-center text-sm text-[#8b949e]">
-        <Link href="/login" className="text-[#58a6ff] hover:underline">
+      <p className="mt-6 text-center text-sm text-muted">
+        <Link href="/login" className="text-link hover:underline">
           Player sign-in (magic link)
         </Link>
       </p>
@@ -97,7 +103,7 @@ export default function AdminLoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 text-[#8b949e]">
+        <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 text-muted">
           Loading…
         </div>
       }

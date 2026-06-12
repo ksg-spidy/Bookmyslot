@@ -80,13 +80,13 @@ function LoginInner() {
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">
       <h1 className="mb-2 text-2xl font-semibold text-white">ShuttleBook</h1>
-      <p className="mb-6 text-sm text-[#8b949e]">
+      <p className="mb-6 text-sm text-muted">
         Player sign-in with a one-time email link.{" "}
-        <Link href="/browse" className="text-[#58a6ff] hover:underline">
+        <Link href="/browse" className="text-link hover:underline">
           Browse sessions
         </Link>{" "}
         without signing in.{" "}
-        <Link href="/admin/login" className="text-[#58a6ff] hover:underline">
+        <Link href="/admin/login" className="text-link hover:underline">
           Organiser admin sign-in
         </Link>
         .
@@ -101,26 +101,26 @@ function LoginInner() {
       {phase === "sent" ? (
         <div className="flex flex-col gap-4">
           <div
-            className="rounded-lg border border-[#30363d] bg-[#161b22] px-4 py-4 text-sm text-[#e6edf3]"
+            className="rounded-lg border border-edge bg-card px-4 py-4 text-sm text-ink"
             role="status"
           >
             {status === "error" ? (
               <p className="text-red-400">{message}</p>
             ) : (
               <>
-                <p className="font-medium text-[#3fb950]">Check your email</p>
-                <p className="mt-2 text-[#8b949e]">
+                <p className="font-medium text-success">Check your email</p>
+                <p className="mt-2 text-muted">
                   We sent a sign-in link to{" "}
-                  <span className="text-[#e6edf3]">{trimmedEmail}</span> because you asked to sign
+                  <span className="text-ink">{trimmedEmail}</span> because you asked to sign
                   in to ShuttleBook.
                 </p>
-                <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-[#8b949e]">
+                <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-muted">
                   What happens next
                 </p>
-                <ul className="mt-2 list-inside list-disc space-y-1 text-[#8b949e]">
-                  <li>Open the email and click <strong className="text-[#e6edf3]">Sign in to ShuttleBook</strong>.</li>
+                <ul className="mt-2 list-inside list-disc space-y-1 text-muted">
+                  <li>Open the email and click <strong className="text-ink">Sign in to ShuttleBook</strong>.</li>
                   <li>
-                    On the next screen, click <strong className="text-[#e6edf3]">Complete sign-in</strong> (this
+                    On the next screen, click <strong className="text-ink">Complete sign-in</strong> (this
                     stops email apps from using your link early).
                   </li>
                   <li>ShuttleBook signs you in automatically — no password.</li>
@@ -129,13 +129,13 @@ function LoginInner() {
                     {nextPath !== "/" ? (
                       <>
                         {" "}
-                        (<span className="text-[#e6edf3]">{nextPath}</span>)
+                        (<span className="text-ink">{nextPath}</span>)
                       </>
                     ) : null}
                     .
                   </li>
                 </ul>
-                <p className="mt-3 text-xs text-[#8b949e]">
+                <p className="mt-3 text-xs text-muted">
                   The link expires in {LINK_EXPIRY_LABEL}. If you did not request it, ignore the
                   email. Check spam or promotions if nothing arrives within a few minutes.
                 </p>
@@ -147,7 +147,7 @@ function LoginInner() {
             type="button"
             disabled={status === "sending" || resendIn > 0}
             onClick={() => void sendLink()}
-            className="rounded-lg border border-[#30363d] bg-[#161b22] py-2 text-sm text-[#e6edf3] hover:border-[#58a6ff] disabled:opacity-50"
+            className="rounded-lg border border-edge bg-card py-2 text-sm text-ink hover:border-link disabled:opacity-50"
           >
             {status === "sending"
               ? "Sending…"
@@ -163,7 +163,7 @@ function LoginInner() {
               setMessage("");
               setResendIn(0);
             }}
-            className="text-sm text-[#58a6ff] hover:underline"
+            className="text-sm text-link hover:underline"
           >
             Use a different email
           </button>
@@ -171,23 +171,26 @@ function LoginInner() {
       ) : (
         <>
           {nextPath !== "/" ? (
-            <p className="mb-4 rounded-lg border border-[#30363d] bg-[#161b22] px-3 py-2 text-xs text-[#8b949e]">
+            <p className="mb-4 rounded-lg border border-edge bg-card px-3 py-2 text-xs text-muted">
               After sign-in you will go to {destinationLabel}{" "}
-              (<span className="text-[#e6edf3]">{nextPath}</span>).
+              (<span className="text-ink">{nextPath}</span>).
             </p>
           ) : null}
           <form onSubmit={sendLink} className="flex flex-col gap-3">
-            <label className="text-xs uppercase tracking-wide text-[#8b949e]">Email</label>
+            <label htmlFor="login-email" className="text-xs uppercase tracking-wide text-muted">
+              Email
+            </label>
             <input
+              id="login-email"
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="rounded-lg border border-[#30363d] bg-[#161b22] px-3 py-2 text-white outline-none focus:border-[#58a6ff]"
+              className="rounded-lg border border-edge bg-card px-3 py-2 text-white outline-none focus:border-link"
               placeholder="you@example.com"
               autoComplete="email"
             />
-            <p className="text-xs text-[#8b949e]">
+            <p className="text-xs text-muted">
               {trimmedEmail
                 ? `We will email ${trimmedEmail} a one-time link. No password.`
                 : "Enter your email and we will send a one-time sign-in link."}
@@ -195,7 +198,7 @@ function LoginInner() {
             <button
               type="submit"
               disabled={status === "sending"}
-              className="rounded-lg bg-[#238636] py-2 font-medium text-white hover:bg-[#2ea043] disabled:opacity-60"
+              className="rounded-lg bg-accent py-2 font-medium text-white hover:bg-accent-hover disabled:opacity-60"
             >
               {status === "sending" ? "Sending…" : "Email me a sign-in link"}
             </button>
@@ -215,7 +218,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 text-[#8b949e]">
+        <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 text-muted">
           Loading…
         </div>
       }

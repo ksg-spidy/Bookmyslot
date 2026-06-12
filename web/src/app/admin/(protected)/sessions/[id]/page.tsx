@@ -46,15 +46,15 @@ export default async function AdminSessionBookingsPage({ params }: Props) {
 
   return (
     <div>
-      <Link href="/admin" className="text-sm text-[#58a6ff] hover:underline">
+      <Link href="/admin" className="text-sm text-link hover:underline">
         ← Admin
       </Link>
       <h1 className="mt-4 text-2xl font-semibold text-white">{session.title}</h1>
-      <p className="text-sm text-[#8b949e]">{session.venue}</p>
+      <p className="text-sm text-muted">{session.venue}</p>
       <p className="mt-2">
         <a
           href={`/api/admin/sessions/${id}/export`}
-          className="text-sm text-[#58a6ff] hover:underline"
+          className="text-sm text-link hover:underline"
         >
           Export CSV
         </a>
@@ -67,8 +67,8 @@ export default async function AdminSessionBookingsPage({ params }: Props) {
           { label: "Fees retained", value: money.feesRetainedCents },
           { label: "Net held", value: money.netHeldCents },
         ].map((stat) => (
-          <div key={stat.label} className="rounded-lg border border-[#30363d] bg-[#161b22] p-3">
-            <p className="text-xs text-[#8b949e]">{stat.label}</p>
+          <div key={stat.label} className="rounded-lg border border-edge bg-card p-3">
+            <p className="text-xs text-muted">{stat.label}</p>
             <p className="mt-1 text-lg font-semibold text-white">{formatAud(stat.value)}</p>
           </div>
         ))}
@@ -77,7 +77,7 @@ export default async function AdminSessionBookingsPage({ params }: Props) {
       <ReconcileButton playSessionId={id} />
 
       {session.closed_out_at ? (
-        <p className="mt-4 text-sm text-[#3fb950]">
+        <p className="mt-4 text-sm text-success">
           Closed out {new Date(session.closed_out_at).toLocaleString()} — leftover waitlist refunded.
         </p>
       ) : new Date(session.starts_at) <= new Date() ? (
@@ -89,9 +89,9 @@ export default async function AdminSessionBookingsPage({ params }: Props) {
       {be ? (
         <p className="mt-4 text-red-400">{be.message}</p>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-lg border border-[#30363d]">
+        <div className="mt-6 overflow-x-auto rounded-lg border border-edge">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-[#30363d] bg-[#161b22] text-[#8b949e]">
+            <thead className="border-b border-edge bg-card text-muted">
               <tr>
                 <th className="p-3">Player</th>
                 <th className="p-3">Phone</th>
@@ -101,19 +101,19 @@ export default async function AdminSessionBookingsPage({ params }: Props) {
             </thead>
             <tbody>
               {rows.map((b) => (
-                <tr key={b.id} className="border-b border-[#21262d]">
+                <tr key={b.id} className="border-b border-edge-soft">
                   <td className="p-3 text-white">{b.full_name}</td>
-                  <td className="p-3 text-[#8b949e]">{b.phone}</td>
-                  <td className="p-3 capitalize text-[#8b949e]">
+                  <td className="p-3 text-muted">{b.phone}</td>
+                  <td className="p-3 capitalize text-muted">
                     {b.status}
                     {b.status === "waitlist" && b.waitlist_position != null ? ` #${b.waitlist_position}` : ""}
                   </td>
-                  <td className="p-3 text-[#8b949e]">{new Date(b.created_at).toLocaleString()}</td>
+                  <td className="p-3 text-muted">{new Date(b.created_at).toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {!rows.length ? <p className="p-4 text-[#8b949e]">No bookings yet.</p> : null}
+          {!rows.length ? <p className="p-4 text-muted">No bookings yet.</p> : null}
         </div>
       )}
     </div>

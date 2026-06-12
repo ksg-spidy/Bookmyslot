@@ -7,11 +7,11 @@ export const metadata = {
 export default function PrivacyPage() {
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
-        <Link href="/" className="text-sm text-[#58a6ff] hover:underline">
+        <Link href="/" className="text-sm text-link hover:underline">
           ← Home
         </Link>
         <h1 className="mt-4 text-2xl font-semibold text-white">Privacy policy</h1>
-        <div className="prose prose-invert mt-6 max-w-none space-y-4 text-sm text-[#e6edf3]">
+        <div className="prose prose-invert mt-6 max-w-none space-y-4 text-sm text-ink">
           <p>
             ShuttleBook is operated for club badminton session booking. We collect only what is needed
             to run bookings: your email (for sign-in), name and phone (shown to organisers), and
@@ -29,7 +29,7 @@ export default function PrivacyPage() {
             Organisers with admin access can view session rosters (name, phone, booking status) for
             sessions they manage.
           </p>
-          <p className="text-[#8b949e]">
+          <p className="text-muted">
             For questions or deletion requests, contact the session organiser or use the contact link in
             the site footer.
           </p>

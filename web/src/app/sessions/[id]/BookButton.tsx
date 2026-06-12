@@ -46,7 +46,7 @@ export function BookButton({
   return (
     <div>
       {full && bookingFeeCents !== undefined ? (
-        <p className="mb-2 text-xs text-[#f0c93a]">
+        <p className="mb-2 text-xs text-warn">
           {getWaitlistCheckoutHint(waitlistCount, bookingFeeCents)}
         </p>
       ) : null}
@@ -54,11 +54,15 @@ export function BookButton({
         type="button"
         disabled={disabled || pending}
         onClick={onBook}
-        className="rounded-lg bg-[#238636] px-4 py-2 font-medium text-white hover:bg-[#2ea043] disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-lg bg-accent px-4 py-2 font-medium text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
       >
         {pending ? "Redirecting…" : buttonLabel}
       </button>
-      {err ? <p className="mt-2 text-sm text-red-400">{err}</p> : null}
+      {err ? (
+        <p className="mt-2 text-sm text-red-400" role="alert">
+          {err}
+        </p>
+      ) : null}
     </div>
   );
 }
