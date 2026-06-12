@@ -149,6 +149,7 @@ export function YourBooking({
           bookingFeeCents={bookingFeeCents}
           withdrawalFeeCents={withdrawalFeeCents}
           canWithdraw={canWithdraw}
+          isWaitlist={active.status === "waitlist"}
         />
       </div>
     );

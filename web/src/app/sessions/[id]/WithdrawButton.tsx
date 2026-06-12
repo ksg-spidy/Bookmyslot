@@ -10,11 +10,14 @@ export function WithdrawButton({
   bookingFeeCents,
   withdrawalFeeCents,
   canWithdraw,
+  isWaitlist = false,
 }: {
   sessionId: string;
   bookingFeeCents: number;
   withdrawalFeeCents: number;
   canWithdraw: boolean;
+  /** Waitlist withdrawals are refunded in full — no withdrawal fee. */
+  isWaitlist?: boolean;
 }) {
   const router = useRouter();
   const [phase, setPhase] = useState<"idle" | "confirm">("idle");
@@ -22,7 +25,8 @@ export function WithdrawButton({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const refundCents = Math.max(0, bookingFeeCents - withdrawalFeeCents);
+  const effectiveFeeCents = isWaitlist ? 0 : withdrawalFeeCents;
+  const refundCents = Math.max(0, bookingFeeCents - effectiveFeeCents);
 
   if (!canWithdraw) {
     return null;
@@ -48,8 +52,17 @@ export function WithdrawButton({
       <div className="mt-4 space-y-3 rounded-lg border border-[#30363d] bg-[#161b22] p-4 text-sm">
         <p className="text-white">Withdraw from this session?</p>
         <p className="text-[#8b949e]">
-          Withdrawal fee: <strong className="text-white">{formatAud(withdrawalFeeCents)}</strong>.
-          Refund to your card: <strong className="text-white">{formatAud(refundCents)}</strong>.
+          {isWaitlist ? (
+            <>
+              You are on the waitlist, so there is no withdrawal fee. Refund to your card:{" "}
+              <strong className="text-white">{formatAud(refundCents)}</strong>.
+            </>
+          ) : (
+            <>
+              Withdrawal fee: <strong className="text-white">{formatAud(effectiveFeeCents)}</strong>.
+              Refund to your card: <strong className="text-white">{formatAud(refundCents)}</strong>.
+            </>
+          )}
         </p>
         <div className="flex flex-wrap gap-3">
           <button
@@ -93,7 +106,9 @@ export function WithdrawButton({
         onClick={() => setPhase("confirm")}
         className="text-sm text-red-400 hover:underline"
       >
-        Withdraw (refund minus {formatAud(withdrawalFeeCents)} fee)
+        {isWaitlist
+          ? "Withdraw (full refund)"
+          : `Withdraw (refund minus ${formatAud(effectiveFeeCents)} fee)`}
       </button>
     </div>
   );

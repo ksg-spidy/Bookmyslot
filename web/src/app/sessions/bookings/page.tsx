@@ -174,6 +174,7 @@ export default async function MyBookingsPage() {
                     bookingFeeCents={s.booking_fee_cents}
                     withdrawalFeeCents={s.withdrawal_fee_cents}
                     canWithdraw
+                    isWaitlist={b.status === "waitlist"}
                   />
                 ) : null}
               </div>

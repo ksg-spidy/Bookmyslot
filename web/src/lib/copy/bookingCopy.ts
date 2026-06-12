@@ -119,6 +119,9 @@ export const PROMOTION_CONFIRMED_MESSAGE =
 
 export function withdrawSuccessMessage(refundCents: number, withdrawalFeeCents: number): string {
   const refundDollars = (refundCents / 100).toFixed(2);
+  if (withdrawalFeeCents <= 0) {
+    return `Booking withdrawn. $${refundDollars} is refunded in full to your card.`;
+  }
   const feeDollars = (withdrawalFeeCents / 100).toFixed(2);
   return `Booking withdrawn. A $${feeDollars} withdrawal fee was kept; $${refundDollars} is refunded to your card.`;
 }
