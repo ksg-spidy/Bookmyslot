@@ -1,5 +1,6 @@
 import { AdminSyncBookingForm } from "@/app/admin/(protected)/sessions/[id]/AdminSyncBookingForm";
 import { CloseoutButton } from "@/app/admin/(protected)/sessions/[id]/CloseoutButton";
+import { ReconcileButton } from "@/app/admin/(protected)/sessions/[id]/ReconcileButton";
 import { formatAud } from "@/lib/money";
 import { getSessionMoneySummary } from "@/lib/payments/ledger";
 import { createServiceClient } from "@/lib/supabase/admin";
@@ -72,6 +73,8 @@ export default async function AdminSessionBookingsPage({ params }: Props) {
           </div>
         ))}
       </div>
+
+      <ReconcileButton playSessionId={id} />
 
       {session.closed_out_at ? (
         <p className="mt-4 text-sm text-[#3fb950]">
