@@ -22,6 +22,9 @@ export default async function AdminProtectedLayout({
           <Link href="/admin" className="font-semibold text-white">
             ShuttleBook Admin
           </Link>
+          <Link href="/admin/stats" className="text-sm text-[#58a6ff] hover:underline">
+            Stats
+          </Link>
           <Link href="/sessions" className="text-sm text-[#58a6ff] hover:underline">
             Player view
           </Link>
