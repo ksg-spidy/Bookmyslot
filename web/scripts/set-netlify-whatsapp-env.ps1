@@ -4,14 +4,20 @@
 
 param(
   [string]$Site = "bookbadmintonslot",
-  [string]$PhoneNumberId = "1064878106717930",
-  [string]$VerifyToken = "bookmyslot-wa-verify-2026",
+  [string]$PhoneNumberId = "",
+  [string]$VerifyToken = "",
   [string]$AccessToken = "",
   [string]$AppSecret = ""
 )
 
 $ErrorActionPreference = "Stop"
 
+if (-not $PhoneNumberId) {
+  $PhoneNumberId = Read-Host "Paste WHATSAPP_PHONE_NUMBER_ID (Meta → WhatsApp → API Setup)"
+}
+if (-not $VerifyToken) {
+  $VerifyToken = Read-Host "Paste WHATSAPP_VERIFY_TOKEN (same random string configured in Meta webhook)"
+}
 if (-not $AccessToken) {
   $AccessToken = Read-Host "Paste WHATSAPP_ACCESS_TOKEN (Meta → API Setup → Generate access token)"
 }

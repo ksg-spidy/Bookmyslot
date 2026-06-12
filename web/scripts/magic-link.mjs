@@ -16,7 +16,11 @@ const env = Object.fromEntries(
 
 const url = env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/rest\/v1\/?$/i, "").replace(/\/+$/, "");
 const key = env.SUPABASE_SERVICE_ROLE_KEY;
-const email = process.argv[2] || "udayan.gupta.ndis@gmail.com";
+const email = process.argv[2];
+if (!email) {
+  console.error("Usage: node scripts/magic-link.mjs <email> [next] [origin]");
+  process.exit(1);
+}
 const next = process.argv[3] || "/sessions";
 const origin = process.argv[4] || "http://localhost:3000";
 const redirectTo = `${origin.replace(/\/+$/, "")}/auth/confirm?_sb=1&next=${encodeURIComponent(next)}`;

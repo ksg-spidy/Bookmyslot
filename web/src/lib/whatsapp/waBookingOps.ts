@@ -29,6 +29,26 @@ export async function buildRosterMessage(
   }
 
   const list = rows ?? [];
+
+  // Privacy gate: player names are only shown to someone who is actually
+  // booked into this session (directly via WhatsApp, or via their linked web
+  // profile) — not to any phone number that texts the bot.
+  const { data: viewerIdentity } = await admin
+    .from("whatsapp_identities")
+    .select("profile_id")
+    .eq("id", viewerWhatsappIdentityId)
+    .maybeSingle();
+  const viewerProfileId = viewerIdentity?.profile_id as string | null | undefined;
+
+  const viewerIsBooked = list.some(
+    (b) =>
+      b.whatsapp_identity_id === viewerWhatsappIdentityId ||
+      (viewerProfileId != null && b.user_id === viewerProfileId)
+  );
+
+  if (!viewerIsBooked) {
+    return "The roster is only visible to booked players. Reply LIST to see open sessions, then BOOK to join.";
+  }
   const userIds = [...new Set(list.map((b) => b.user_id).filter(Boolean))] as string[];
   const waIdentityIds = [...new Set(list.map((b) => b.whatsapp_identity_id).filter(Boolean))] as string[];
 

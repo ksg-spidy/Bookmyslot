@@ -92,6 +92,7 @@ export async function fulfillBookingFromCheckoutSession(
         },
         status: existing.status as "confirmed" | "waitlist",
         waitlistPosition: (existing.waitlist_position as number | null) ?? null,
+        bookingId: existing.id as string,
       });
     }
     return { ok: true };
@@ -150,6 +151,7 @@ export async function fulfillBookingFromCheckoutSession(
       },
       status,
       waitlistPosition,
+      bookingId: row.booking_id,
     });
   }
 

@@ -11,6 +11,14 @@ import Link from "next/link";
 type NeedsAttention = {
   stuckWithdrawing: { bookingId: string; sessionTitle: string; updatedAt: string }[];
   unclosedSessions: { id: string; title: string; startsAt: string; waitlistCount: number }[];
+  failedNotifications: {
+    id: string;
+    channel: string;
+    kind: string;
+    recipient: string | null;
+    error: string | null;
+    createdAt: string;
+  }[];
 };
 
 async function getNeedsAttention(
@@ -18,7 +26,7 @@ async function getNeedsAttention(
 ): Promise<NeedsAttention> {
   const nowIso = new Date().toISOString();
 
-  const [{ data: stuck }, { data: pastUnclosed }] = await Promise.all([
+  const [{ data: stuck }, { data: pastUnclosed }, { data: failedNotifs }] = await Promise.all([
     admin
       .from("bookings")
       .select("id, updated_at, play_sessions ( title )")
@@ -29,6 +37,12 @@ async function getNeedsAttention(
       .select("id, title, starts_at")
       .lte("starts_at", nowIso)
       .is("closed_out_at", null),
+    admin
+      .from("notification_failures")
+      .select("id, channel, kind, recipient, error, created_at")
+      .is("resolved_at", null)
+      .order("created_at", { ascending: false })
+      .limit(15),
   ]);
 
   const pastIds = (pastUnclosed ?? []).map((s) => s.id as string);
@@ -63,6 +77,14 @@ async function getNeedsAttention(
         startsAt: s.starts_at as string,
         waitlistCount: waitlistCounts.get(s.id as string) ?? 0,
       })),
+    failedNotifications: (failedNotifs ?? []).map((f) => ({
+      id: f.id as string,
+      channel: f.channel as string,
+      kind: f.kind as string,
+      recipient: f.recipient as string | null,
+      error: f.error as string | null,
+      createdAt: f.created_at as string,
+    })),
   };
 }
 
@@ -89,7 +111,9 @@ export default async function AdminHomePage() {
   }
 
   const hasAttentionItems =
-    attention.stuckWithdrawing.length > 0 || attention.unclosedSessions.length > 0;
+    attention.stuckWithdrawing.length > 0 ||
+    attention.unclosedSessions.length > 0 ||
+    attention.failedNotifications.length > 0;
 
   return (
     <div className="space-y-10">
@@ -125,6 +149,22 @@ export default async function AdminHomePage() {
                     </Link>{" "}
                     — started {new Date(s.startsAt).toLocaleString()}, {s.waitlistCount} waitlisted.
                     Use “Close out session” to refund them.
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {attention.failedNotifications.length > 0 ? (
+            <div className="mt-3">
+              <p className="text-sm text-white">
+                Failed player notifications (the player may not know their booking changed):
+              </p>
+              <ul className="mt-2 space-y-1 text-sm text-[#8b949e]">
+                {attention.failedNotifications.map((f) => (
+                  <li key={f.id}>
+                    [{f.channel}] {f.kind} to {f.recipient ?? "unknown"} —{" "}
+                    {new Date(f.createdAt).toLocaleString()}
+                    {f.error ? ` (${f.error.slice(0, 120)})` : ""}
                   </li>
                 ))}
               </ul>

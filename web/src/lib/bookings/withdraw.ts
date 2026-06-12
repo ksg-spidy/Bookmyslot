@@ -194,7 +194,12 @@ export async function withdrawBooking(opts: {
             .maybeSingle();
           const promotedTo = promotedWa?.wa_id as string | undefined;
           if (promotedTo) {
-            await notifyWhatsAppWaitlistPromoted(promotedTo);
+            await notifyWhatsAppWaitlistPromoted({
+              admin,
+              waId: promotedTo,
+              playSessionId,
+              bookingId: promoted.promoted_booking_id,
+            });
           }
         }
 

@@ -4,7 +4,9 @@ import {
   PROMOTION_CONFIRMED_MESSAGE,
 } from "@/lib/copy/bookingCopy";
 import { formatSessionRange } from "@/lib/datetime";
+import { recordNotificationFailure } from "@/lib/notifications/failures";
 import { sendWhatsAppText } from "@/lib/whatsapp/sendText";
+import { getPromotionTemplateConfig, sendWhatsAppTemplate } from "@/lib/whatsapp/sendTemplate";
 
 export async function notifyWhatsAppBookingConfirmation(opts: {
   admin: SupabaseClient;
@@ -18,9 +20,17 @@ export async function notifyWhatsAppBookingConfirmation(opts: {
   };
   status: "confirmed" | "waitlist";
   waitlistPosition: number | null;
+  bookingId?: string;
 }): Promise<void> {
-  const { admin, whatsappIdentityId, playSessionId, playSession, status, waitlistPosition } =
-    opts;
+  const {
+    admin,
+    whatsappIdentityId,
+    playSessionId,
+    playSession,
+    status,
+    waitlistPosition,
+    bookingId,
+  } = opts;
 
   const { data: wid } = await admin
     .from("whatsapp_identities")
@@ -30,7 +40,13 @@ export async function notifyWhatsAppBookingConfirmation(opts: {
 
   const to = wid?.wa_id as string | undefined;
   if (!to) {
-    console.error("WhatsApp confirmation: no wa_id for identity", whatsappIdentityId);
+    await recordNotificationFailure(admin, {
+      channel: "whatsapp",
+      kind: "booking_confirmation",
+      bookingId,
+      playSessionId,
+      error: `No wa_id for identity ${whatsappIdentityId}`,
+    });
     return;
   }
 
@@ -45,10 +61,55 @@ export async function notifyWhatsAppBookingConfirmation(opts: {
 
   const sent = await sendWhatsAppText(to, body);
   if (!sent.ok) {
-    console.error("WhatsApp confirmation failed", sent.error);
+    await recordNotificationFailure(admin, {
+      channel: "whatsapp",
+      kind: "booking_confirmation",
+      recipient: to,
+      bookingId,
+      playSessionId,
+      error: sent.error,
+    });
   }
 }
 
-export async function notifyWhatsAppWaitlistPromoted(waId: string): Promise<void> {
-  await sendWhatsAppText(waId, `ShuttleBook: ${PROMOTION_CONFIRMED_MESSAGE}`);
+/**
+ * Tell a paid waitlist player they are confirmed. Free-form text fails outside
+ * Meta's 24h window, so when WHATSAPP_TEMPLATE_PROMOTION is configured we fall
+ * back to that pre-approved template. Any final failure is recorded for the
+ * admin dashboard — this is a money-relevant notice the player must receive.
+ */
+export async function notifyWhatsAppWaitlistPromoted(opts: {
+  admin: SupabaseClient;
+  waId: string;
+  playSessionId: string;
+  bookingId?: string;
+}): Promise<void> {
+  const { admin, waId, playSessionId, bookingId } = opts;
+
+  const sent = await sendWhatsAppText(waId, `ShuttleBook: ${PROMOTION_CONFIRMED_MESSAGE}`);
+  if (sent.ok) return;
+
+  const template = getPromotionTemplateConfig();
+  if (template) {
+    const templateSent = await sendWhatsAppTemplate(waId, template.name, template.language);
+    if (templateSent.ok) return;
+    await recordNotificationFailure(admin, {
+      channel: "whatsapp",
+      kind: "waitlist_promoted",
+      recipient: waId,
+      bookingId,
+      playSessionId,
+      error: `free-form: ${sent.error}; template ${template.name}: ${templateSent.error}`,
+    });
+    return;
+  }
+
+  await recordNotificationFailure(admin, {
+    channel: "whatsapp",
+    kind: "waitlist_promoted",
+    recipient: waId,
+    bookingId,
+    playSessionId,
+    error: sent.error,
+  });
 }

@@ -2,6 +2,7 @@ import type { createServiceClient } from "@/lib/supabase/admin";
 import { PROMOTION_CONFIRMED_MESSAGE, sessionPageUrl } from "@/lib/copy/bookingCopy";
 import { formatSessionRange } from "@/lib/datetime";
 import { sendBookingEmail } from "@/lib/email/sendBookingEmail";
+import { recordNotificationFailure } from "@/lib/notifications/failures";
 
 type Admin = ReturnType<typeof createServiceClient>;
 
@@ -56,6 +57,12 @@ export async function notifyWaitlistPromotedByEmail(opts: {
   });
 
   if (!sent.ok && sent.error !== "email_not_configured") {
-    console.error("Waitlist promotion email failed", sent.error);
+    await recordNotificationFailure(admin, {
+      channel: "email",
+      kind: "waitlist_promoted",
+      recipient: email,
+      playSessionId,
+      error: sent.error,
+    });
   }
 }
